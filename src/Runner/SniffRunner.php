@@ -24,12 +24,10 @@ final class SniffRunner
     }
 
     /**
-     * @param list<string>|null $overridePaths
-     * @param array<string, list<int>>|null $diffLines
      * @throws \RuntimeException if a sniff class cannot be found or does not implement SniffInterface.
      * @throws \UnexpectedValueException if no files are found to scan.
      */
-    public function run(ConfigData $config, ?array $overridePaths = null, ?array $diffLines = null): Report
+    public function run(ConfigData $config, RunOptions $options = new RunOptions()): Report
     {
         $startTime = microtime(true);
 
@@ -37,15 +35,16 @@ final class SniffRunner
 
         $matcher = new PathMatcher($config->getBasePath(), $config->getExcludePatterns());
 
-        $includePaths = $overridePaths ?? $config->getIncludePaths();
+        $entities = new EntityResolver(
+            $config->getProjectRoots(),
+            $config->getEntityPaths(),
+        )->resolve();
 
-        $entityResolver = new EntityResolver($config->getProjectRoots(), $config->getEntityPaths());
-        $entities = $entityResolver->resolve();
+        $includePaths = $options->overridePaths ?? $config->getIncludePaths();
 
-        $pathLoader = new PathLoader($includePaths, $matcher);
-        $files = $pathLoader->loadPaths();
+        $files = new PathLoader($includePaths, $matcher)->loadPaths();
 
-        if ($diffLines !== null) {
+        if (null !== $diffLines = $options->diffLines) {
             $files = $this->filterByDiff($files, array_keys($diffLines));
         }
 

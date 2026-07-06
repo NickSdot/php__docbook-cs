@@ -20,6 +20,8 @@ use DocbookCS\Report\Reporter\CheckstyleReporter;
 use DocbookCS\Report\Reporter\ConsoleReporter;
 use DocbookCS\Report\Reporter\JsonReporter;
 use DocbookCS\Runner\EntityPreprocessor;
+use DocbookCS\Runner\RunMode;
+use DocbookCS\Runner\RunOptions;
 use DocbookCS\Runner\SniffRunner;
 use DocbookCS\Runner\XmlFileProcessor;
 use DocbookCS\Sniff\ExceptionNameSniff;
@@ -39,6 +41,8 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(Report::class)]
 #[CoversClass(ConsoleReporter::class)]
 #[CoversClass(EntityPreprocessor::class)]
+#[CoversClass(RunMode::class)]
+#[CoversClass(RunOptions::class)]
 #[CoversClass(SniffRunner::class)]
 #[CoversClass(XmlFileProcessor::class)]
 #[CoversClass(CheckstyleReporter::class)]

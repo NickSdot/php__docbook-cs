@@ -15,6 +15,8 @@ use DocbookCS\Report\Reporter\CheckstyleReporter;
 use DocbookCS\Report\Reporter\ConsoleReporter;
 use DocbookCS\Report\Reporter\JsonReporter;
 use DocbookCS\Report\Reporter\ReporterInterface;
+use DocbookCS\Runner\RunMode;
+use DocbookCS\Runner\RunOptions;
 use DocbookCS\Runner\SniffRunner;
 
 final class Application
@@ -98,9 +100,16 @@ final class Application
 
         $progress = $this->createProgress($options);
 
+        $runOptions = new RunOptions(
+            mode: RunMode::fromFixFlag($options['fix']),
+            overridePaths: $overridePaths,
+            diffLines: $diffLines,
+            strict: $options['strict'],
+        );
+
         try {
             $runner = new SniffRunner($progress);
-            $report = $runner->run($config, $overridePaths, $diffLines);
+            $report = $runner->run($config, $runOptions);
         } catch (\Throwable $e) {
             $this->writeError('Runtime error: ' . $e->getMessage() . PHP_EOL);
 
