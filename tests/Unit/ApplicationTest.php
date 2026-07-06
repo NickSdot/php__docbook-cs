@@ -390,6 +390,19 @@ DIFF);
     }
 
     #[Test]
+    public function itIncludesFixAndStrictOptionsInHelp(): void
+    {
+        $app = new Application(['docbook-cs', '--help'], $this->stdout, $this->stderr);
+
+        $app->run();
+
+        $output = $this->readStream($this->stdout);
+
+        self::assertStringContainsString('--fix', $output);
+        self::assertStringContainsString('--strict', $output);
+    }
+
+    #[Test]
     public function itSuppressesProgressWhenQuietFlagIsSet(): void
     {
         $app = new Application(

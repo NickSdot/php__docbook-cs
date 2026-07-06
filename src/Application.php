@@ -146,6 +146,8 @@ final class Application
      *     config: string,
      *     report: string,
      *     colors: bool,
+     *     fix: bool,
+     *     strict: bool,
      *     quiet: bool,
      *     paths: list<string>,
      *     diff: string|null,
@@ -160,6 +162,8 @@ final class Application
             'config' => self::DEFAULT_CONFIG,
             'report' => 'console',
             'colors' => $this->detectColorSupport(),
+            'fix' => false,
+            'strict' => false,
             'quiet' => false,
             'paths' => [],
             'diff' => null,
@@ -244,6 +248,18 @@ final class Application
 
             if ($arg === '--perf') {
                 $result['perf'] = true;
+                $i++;
+                continue;
+            }
+
+            if ($arg === '--fix') {
+                $result['fix'] = true;
+                $i++;
+                continue;
+            }
+
+            if ($arg === '--strict') {
+                $result['strict'] = true;
                 $i++;
                 continue;
             }
@@ -386,6 +402,10 @@ Options:
                         Omit the value or pass "-" to read the diff from stdin.
                         Violations are only reported when the violating element
                         is on or contains a changed line (parent-context aware).
+  --fix                 Automatically fixes violations when related the fixers
+                        exist (experimental).
+  --strict              Extends the runner scope to files of entities referenced 
+                        in targeted files.
 
 Arguments:
   <file-or-directory>   One or more files or directories to scan.
@@ -397,6 +417,8 @@ Examples:
   docbook-cs --report=checkstyle --no-colors > report.xml
   docbook-cs reference/strings/functions/strlen.xml
   git diff HEAD | docbook-cs --diff --report=checkstyle
+  git diff HEAD | docbook-cs --diff --fix
+  git diff HEAD | docbook-cs --diff --fix --strict
   docbook-cs --diff=changes.patch --report=json
 
 HELP;
