@@ -15,7 +15,7 @@ interface SniffInterface
     /**
      * Unique, human-readable code for this sniff (e.g. "DocbookCS.MySniff").
      */
-    public function getCode(): string;
+    public static function getCode(): string;
 
     /**
      * Apply the sniff to the given document.

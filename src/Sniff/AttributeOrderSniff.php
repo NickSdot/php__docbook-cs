@@ -13,7 +13,7 @@ namespace DocbookCS\Sniff;
  */
 final class AttributeOrderSniff extends AbstractSniff
 {
-    public function getCode(): string
+    public static function getCode(): string
     {
         return 'DocbookCS.AttributeOrder';
     }

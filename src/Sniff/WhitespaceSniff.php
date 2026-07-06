@@ -14,7 +14,7 @@ namespace DocbookCS\Sniff;
  */
 final class WhitespaceSniff extends AbstractSniff
 {
-    public function getCode(): string
+    public static function getCode(): string
     {
         return 'DocbookCS.Whitespace';
     }

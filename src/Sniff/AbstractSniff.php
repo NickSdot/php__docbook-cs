@@ -30,7 +30,7 @@ abstract class AbstractSniff implements SniffInterface
         Severity $severity = Severity::ERROR,
     ): Violation {
         return new Violation(
-            sniffCode: $this->getCode(),
+            sniffCode: static::getCode(),
             filePath: $filePath,
             line: $line,
             message: $message,

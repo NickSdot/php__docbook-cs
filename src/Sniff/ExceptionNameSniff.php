@@ -23,7 +23,7 @@ final class ExceptionNameSniff extends AbstractSniff
         'Throwable',
     ];
 
-    public function getCode(): string
+    public static function getCode(): string
     {
         return 'DocbookCS.ExceptionName';
     }

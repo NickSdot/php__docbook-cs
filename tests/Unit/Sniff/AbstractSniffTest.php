@@ -15,7 +15,7 @@ final class AbstractSniffTest extends TestCase
     private function createSniff(): AbstractSniff
     {
         return new class extends AbstractSniff {
-            public function getCode(): string
+            public static function getCode(): string
             {
                 return 'test.sniff';
             }

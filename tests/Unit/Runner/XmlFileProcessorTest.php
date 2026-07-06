@@ -301,7 +301,7 @@ final class XmlFileProcessorTest extends TestCase
             {
             }
 
-            public function getCode(): string
+            public static function getCode(): string
             {
                 return 'Test.Stub';
             }
@@ -310,7 +310,7 @@ final class XmlFileProcessorTest extends TestCase
             {
                 return array_map(
                     fn(int $line) => new Violation(
-                        sniffCode: $this->getCode(),
+                        sniffCode: self::getCode(),
                         filePath: $filePath,
                         line: $line,
                         message: "violation at line {$line}",

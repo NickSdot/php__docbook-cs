@@ -96,7 +96,7 @@ final class SimparaSniff extends AbstractSniff
         'xref',
     ];
 
-    public function getCode(): string
+    public static function getCode(): string
     {
         return 'DocbookCS.Simpara';
     }

@@ -43,7 +43,7 @@ use DocbookCS\Sniff\AbstractSniff;
 
 final class MySniff extends AbstractSniff
 {
-    public function getCode(): string
+    public static function getCode(): string
     {
         return 'Acme.MySniff';
     }

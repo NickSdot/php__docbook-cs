@@ -105,7 +105,7 @@ final class SniffRunnerTest extends TestCase
     public function itAddsFileReportsForFilesWithViolations(): void
     {
         $sniff = new class implements SniffInterface {
-            public function getCode(): string
+            public static function getCode(): string
             {
                 return 'Test.ViolatingSniff';
             }
@@ -142,7 +142,7 @@ final class SniffRunnerTest extends TestCase
     public function itStoresRelativePathsInFileReports(): void
     {
         $sniff = new class implements SniffInterface {
-            public function getCode(): string
+            public static function getCode(): string
             {
                 return 'Test.ViolatingSniff';
             }
@@ -189,7 +189,7 @@ final class SniffRunnerTest extends TestCase
                 self::$captured = $value;
             }
 
-            public function getCode(): string
+            public static function getCode(): string
             {
                 return 'Test.ConfigurableSniff';
             }
@@ -287,7 +287,7 @@ final class SniffRunnerTest extends TestCase
     public function itReportsNoViolationsForFilesInDiffWithoutAddedLines(): void
     {
         $sniff = new class implements SniffInterface {
-            public function getCode(): string
+            public static function getCode(): string
             {
                 return 'Test.ViolatingSniff';
             }

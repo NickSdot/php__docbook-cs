@@ -84,7 +84,7 @@ final class XmlFileProcessor
                 $violations[] = $violation;
             }
 
-            $this->report->addSniffTime($sniff->getCode(), microtime(true) - $start);
+            $this->report->addSniffTime($sniff::getCode(), microtime(true) - $start);
         }
 
         if ($changedLines !== null) {
