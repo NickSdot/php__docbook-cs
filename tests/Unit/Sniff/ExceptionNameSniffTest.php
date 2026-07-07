@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace DocbookCS\Tests\Unit\Sniff;
 
-use DocbookCS\Report\Violation;
 use DocbookCS\Sniff\ExceptionNameSniff;
+use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

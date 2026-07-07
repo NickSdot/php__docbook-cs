@@ -6,8 +6,8 @@ namespace DocbookCS\Fix\Fixer;
 
 use DocbookCS\Fix\Fix;
 use DocbookCS\Fix\FixerException;
-use DocbookCS\Report\Violation;
 use DocbookCS\Sniff\ExceptionNameSniff;
+use DocbookCS\Violation\Violation;
 
 final class ExceptionNameFixer implements Fixer
 {

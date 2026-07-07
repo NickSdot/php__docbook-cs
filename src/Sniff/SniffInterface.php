@@ -24,7 +24,7 @@ interface SniffInterface
     /**
      * Apply the sniff to the given document.
      *
-     * @return list<\DocbookCS\Report\Violation>
+     * @return list<\DocbookCS\Violation\Violation>
      */
     public function process(\DOMDocument $document, string $content, string $filePath): array;
 

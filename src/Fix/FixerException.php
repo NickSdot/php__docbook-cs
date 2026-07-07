@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DocbookCS\Fix;
 
-use DocbookCS\Report\Violation;
+use DocbookCS\Violation\Violation;
 
 final class FixerException extends \RuntimeException
 {

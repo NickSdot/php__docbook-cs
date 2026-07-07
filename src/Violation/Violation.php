@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DocbookCS\Report;
+namespace DocbookCS\Violation;
 
 final readonly class Violation
 {

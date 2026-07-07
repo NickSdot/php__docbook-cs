@@ -9,10 +9,10 @@ use DocbookCS\Fix\FixApplier;
 use DocbookCS\Fix\FixerException;
 use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
-use DocbookCS\Report\Severity;
-use DocbookCS\Report\Violation;
 use DocbookCS\Sniff\Fixable;
 use DocbookCS\Sniff\SniffInterface;
+use DocbookCS\Violation\Severity;
+use DocbookCS\Violation\Violation;
 
 final readonly class XmlFileProcessor
 {

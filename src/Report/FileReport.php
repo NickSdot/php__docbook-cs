@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace DocbookCS\Report;
 
+use DocbookCS\Violation\Severity;
+use DocbookCS\Violation\Violation;
+
 final class FileReport
 {
     /** @var list<Violation> */

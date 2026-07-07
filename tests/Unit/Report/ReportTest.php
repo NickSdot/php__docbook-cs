@@ -6,8 +6,8 @@ namespace DocbookCS\Tests\Unit\Report;
 
 use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
-use DocbookCS\Report\Severity;
-use DocbookCS\Report\Violation;
+use DocbookCS\Violation\Severity;
+use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

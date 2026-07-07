@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace DocbookCS\Report\Reporter;
 
 use DocbookCS\Report\Report;
-use DocbookCS\Report\Severity;
+use DocbookCS\Violation\Severity;
 
 final class ConsoleReporter implements ReporterInterface
 {

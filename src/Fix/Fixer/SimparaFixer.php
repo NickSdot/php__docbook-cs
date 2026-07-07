@@ -6,7 +6,7 @@ namespace DocbookCS\Fix\Fixer;
 
 use DocbookCS\Fix\Fix;
 use DocbookCS\Fix\FixerException;
-use DocbookCS\Report\Violation;
+use DocbookCS\Violation\Violation;
 
 final class SimparaFixer implements Fixer
 {

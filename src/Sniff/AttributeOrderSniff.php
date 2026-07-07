@@ -64,7 +64,8 @@ final class AttributeOrderSniff extends AbstractSniff implements Fixable
     }
 
     /**
-     * @param list<\DocbookCS\Report\Violation> &$violations
+     * @param list<\DocbookCS\Violation\Violation> &$violations
+     *
      * @throws \LogicException if an invalid severity level is configured
      */
     private function checkAttributes(

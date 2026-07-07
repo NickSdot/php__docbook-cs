@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace DocbookCS\Sniff;
 
-use DocbookCS\Report\Severity;
-use DocbookCS\Report\Violation;
 use DocbookCS\Runner\RunMode;
+use DocbookCS\Violation\Severity;
+use DocbookCS\Violation\Violation;
 
 abstract class AbstractSniff implements SniffInterface
 {

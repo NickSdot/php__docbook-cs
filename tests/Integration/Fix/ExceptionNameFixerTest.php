@@ -6,11 +6,11 @@ namespace DocbookCS\Tests\Integration\Fix;
 
 use DocbookCS\Fix\Fix;
 use DocbookCS\Fix\FixApplier;
-use DocbookCS\Fix\FixResult;
 use DocbookCS\Fix\Fixer\ExceptionNameFixer;
-use DocbookCS\Report\Violation;
+use DocbookCS\Fix\FixResult;
 use DocbookCS\Runner\RunMode;
 use DocbookCS\Sniff\ExceptionNameSniff;
+use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
