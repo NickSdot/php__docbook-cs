@@ -36,8 +36,14 @@ final class AttributeOrderFixerTest extends TestCase
             'file.xml',
         );
 
+        $beginOffset = (int) strpos($content, '<root');
+        $sourceContent = '<root xmlns="urn:test" xml:id="root"/>';
+
         self::assertCount(1, $violations);
-        self::assertSame('<root xmlns="urn:test" xml:id="root"/>', $violations[0]->content);
+        self::assertSame($sourceContent, $violations[0]->content);
+        self::assertSame($beginOffset, $violations[0]->beginOffset);
+        self::assertSame($beginOffset + strlen($sourceContent), $violations[0]->untilOffset);
+        self::assertSame(1, $violations[0]->line);
 
         $fix = new AttributeOrderFixer()->process($violations[0]);
 

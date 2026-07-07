@@ -36,8 +36,14 @@ final class ExceptionNameFixerTest extends TestCase
             'file.xml',
         );
 
+        $beginOffset = (int) strpos($content, '<classname>');
+        $sourceContent = '<classname>RuntimeException</classname>';
+
         self::assertCount(1, $violations);
-        self::assertSame('<classname>RuntimeException</classname>', $violations[0]->content);
+        self::assertSame($sourceContent, $violations[0]->content);
+        self::assertSame($beginOffset, $violations[0]->beginOffset);
+        self::assertSame($beginOffset + strlen($sourceContent), $violations[0]->untilOffset);
+        self::assertSame(1, $violations[0]->line);
 
         $fix = new ExceptionNameFixer()->process($violations[0]);
 
@@ -71,6 +77,37 @@ final class ExceptionNameFixerTest extends TestCase
 
         self::assertSame(
             '<root><exceptionname linkend="runtime-exception">RuntimeException</exceptionname></root>',
+            $result->content,
+        );
+        self::assertSame(1, $result->applied);
+    }
+
+    #[Test]
+    public function itKeepsSourceContentAlignedAfterRegularClassnames(): void
+    {
+        $content = '<root><classname>RegularClass</classname><classname>RuntimeException</classname></root>';
+        $document = $this->createDocument($content);
+
+        $violations = new ExceptionNameSniff(RunMode::Fix)->process(
+            $document,
+            $content,
+            'file.xml',
+        );
+
+        $sourceContent = '<classname>RuntimeException</classname>';
+        $beginOffset = (int) strpos($content, $sourceContent);
+
+        self::assertCount(1, $violations);
+        self::assertSame($sourceContent, $violations[0]->content);
+        self::assertSame($beginOffset, $violations[0]->beginOffset);
+        self::assertSame($beginOffset + strlen($sourceContent), $violations[0]->untilOffset);
+
+        $fix = new ExceptionNameFixer()->process($violations[0]);
+
+        $result = new FixApplier()->apply($content, [$fix]);
+
+        self::assertSame(
+            '<root><classname>RegularClass</classname><exceptionname>RuntimeException</exceptionname></root>',
             $result->content,
         );
         self::assertSame(1, $result->applied);

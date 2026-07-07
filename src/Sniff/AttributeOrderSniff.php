@@ -56,7 +56,7 @@ final class AttributeOrderSniff extends AbstractSniff implements Fixable
                 $beginOffset,
                 $beginOffset + strlen($fullMatch),
                 $violations,
-                $this->mode->isFixMode() ? $fullMatch : null,
+                $fullMatch,
             );
         }
 

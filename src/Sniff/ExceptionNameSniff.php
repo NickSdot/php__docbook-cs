@@ -43,26 +43,19 @@ final class ExceptionNameSniff extends AbstractSniff implements Fixable
     {
         $violations = [];
         $sourceMatchIndex = 0;
-        $isFixMode = $this->mode->isFixMode();
 
         $classnames = $document->getElementsByTagName('classname');
         if ($classnames->length === 0) {
             return [];
         }
 
-        $sourceMatches = $isFixMode
-            ? $this->sourceMatches($content)
-            : [];
+        $sourceMatches = $this->sourceMatches($content);
 
         /** @var \DOMElement $node */
         foreach ($classnames as $node) {
             $text = trim($node->textContent);
-            $match = null;
-
-            if ($isFixMode) {
-                $match = $sourceMatches[$sourceMatchIndex] ?? null;
-                $sourceMatchIndex++;
-            }
+            $match = $sourceMatches[$sourceMatchIndex] ?? null;
+            $sourceMatchIndex++;
 
             if ($text === '') {
                 continue;
@@ -76,7 +69,7 @@ final class ExceptionNameSniff extends AbstractSniff implements Fixable
                 continue;
             }
 
-            if ($isFixMode && ($match === null || $match['text'] !== $text)) {
+            if ($match === null || $match['text'] !== $text) {
                 throw new \LogicException('Could not map classname violation to source content.');
             }
 
@@ -87,9 +80,9 @@ final class ExceptionNameSniff extends AbstractSniff implements Fixable
                     '"%s" is wrapped in <classname> but should use <exceptionname>.',
                     $text,
                 ),
-                beginOffset: $match['beginOffset'] ?? 0,
-                untilOffset: $match['untilOffset'] ?? 0,
-                content: $match['content'] ?? null,
+                beginOffset: $match['beginOffset'],
+                untilOffset: $match['untilOffset'],
+                content: $match['content'],
             );
         }
 

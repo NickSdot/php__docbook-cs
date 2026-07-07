@@ -5,14 +5,12 @@ declare(strict_types=1);
 namespace DocbookCS\Tests\Unit\Sniff;
 
 use DocbookCS\Report\Violation;
-use DocbookCS\Runner\RunMode;
 use DocbookCS\Sniff\ExceptionNameSniff;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(ExceptionNameSniff::class)]
-#[CoversClass(RunMode::class)]
 #[CoversClass(Violation::class)]
 final class ExceptionNameSniffTest extends TestCase
 {
@@ -158,12 +156,12 @@ final class ExceptionNameSniffTest extends TestCase
     }
 
     #[Test]
-    public function itAddsSourceContentInFixMode(): void
+    public function itAddsSourceContent(): void
     {
         $content = '<root><classname>RuntimeException</classname></root>';
         $doc = $this->createDocument($content);
 
-        $violations = new ExceptionNameSniff(RunMode::Fix)->process($doc, $content, 'file.xml');
+        $violations = new ExceptionNameSniff()->process($doc, $content, 'file.xml');
 
         $beginOffset = (int) strpos($content, '<classname>');
         $sourceContent = '<classname>RuntimeException</classname>';
@@ -176,12 +174,12 @@ final class ExceptionNameSniffTest extends TestCase
     }
 
     #[Test]
-    public function itKeepsFixModeSourceContentAlignedAfterRegularClassnames(): void
+    public function itKeepsSourceContentAlignedAfterRegularClassnames(): void
     {
         $content = '<root><classname>RegularClass</classname><classname>RuntimeException</classname></root>';
         $doc = $this->createDocument($content);
 
-        $violations = new ExceptionNameSniff(RunMode::Fix)->process($doc, $content, 'file.xml');
+        $violations = new ExceptionNameSniff()->process($doc, $content, 'file.xml');
 
         $sourceContent = '<classname>RuntimeException</classname>';
         $beginOffset = (int) strpos($content, $sourceContent);
