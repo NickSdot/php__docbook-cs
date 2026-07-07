@@ -4,8 +4,13 @@ declare(strict_types=1);
 
 namespace DocbookCS\Sniff;
 
-final class SimparaSniff extends AbstractSniff
+use DocbookCS\Fix\Fixer\SimparaFixer;
+
+final class SimparaSniff extends AbstractSniff implements Fixable
 {
+    private const string MESSAGE = '<para> contains only inline content and should be <simpara>.';
+    private const string PARA_TAG_PATTERN = '/<\/?para\b[^>]*>/';
+
     private const array SIMPARA_ALLOWED = [
         'abbrev',
         'acronym',
@@ -101,16 +106,34 @@ final class SimparaSniff extends AbstractSniff
         return 'DocbookCS.Simpara';
     }
 
+    public static function fixerClassName(): string
+    {
+        return SimparaFixer::class;
+    }
+
     /** @throws \LogicException if an invalid severity level is configured */
     public function process(\DOMDocument $document, string $content, string $filePath): array
     {
         $violations = [];
-        $allowed = $this->getAllowedElements();
+        $sourceMatchIndex = 0;
 
         $paras = $document->getElementsByTagName('para');
+        if ($paras->length === 0) {
+            return [];
+        }
+
+        $sourceMatches = $this->sourceMatches($content);
+        $allowed = $this->getAllowedElements();
 
         /** @var \DOMElement $para */
         foreach ($paras as $para) {
+            $match = $sourceMatches[$sourceMatchIndex] ?? null;
+            $sourceMatchIndex++;
+
+            if ($match === null) {
+                throw new \LogicException('Could not map simpara violation to source content.');
+            }
+
             $parent = $para->parentNode;
             if (
                 $parent instanceof \DOMElement
@@ -119,13 +142,18 @@ final class SimparaSniff extends AbstractSniff
                 continue;
             }
 
-            if ($this->isSimple($para, $allowed)) {
-                $violations[] = $this->createViolation(
-                    $filePath,
-                    $para->getLineNo(),
-                    '<para> contains only inline content and should be <simpara>.',
-                );
+            if (!$this->isSimple($para, $allowed)) {
+                continue;
             }
+
+            $violations[] = $this->createViolation(
+                $filePath,
+                $para->getLineNo(),
+                self::MESSAGE,
+                beginOffset: $match['beginOffset'],
+                untilOffset: $match['untilOffset'],
+                content: $match['content'],
+            );
         }
 
         return $violations;
@@ -137,12 +165,14 @@ final class SimparaSniff extends AbstractSniff
     private function isSimple(\DOMElement $node, array $allowed): bool
     {
         foreach ($node->childNodes as $child) {
-            if ($child instanceof \DOMElement) {
-                $name = strtolower($child->localName ?: '');
+            if (!$child instanceof \DOMElement) {
+                continue;
+            }
 
-                if (!in_array($name, $allowed, true)) {
-                    return false;
-                }
+            $name = strtolower($child->localName ?: '');
+
+            if (!in_array($name, $allowed, true)) {
+                return false;
             }
         }
 
@@ -162,5 +192,43 @@ final class SimparaSniff extends AbstractSniff
         $additional = array_filter($additional, static fn(string $s): bool => $s !== '');
 
         return array_values(array_unique(array_merge(self::SIMPARA_ALLOWED, $additional)));
+    }
+
+    /**
+     * @return list<array{beginOffset: int, untilOffset: int, content: string}>
+     */
+    private function sourceMatches(string $content): array
+    {
+        preg_match_all(self::PARA_TAG_PATTERN, $content, $matches, PREG_OFFSET_CAPTURE);
+
+        $stack = [];
+        $sourceMatches = [];
+
+        foreach ($matches[0] as [$tag, $offset]) {
+            $offset = (int) $offset;
+
+            if (!str_starts_with($tag, '</')) {
+                $stack[] = $offset;
+                continue;
+            }
+
+            if (null === $start = array_pop($stack)) {
+                continue;
+            }
+
+            $untilOffset = $offset + strlen($tag);
+            $sourceMatches[] = [
+                'beginOffset' => $start,
+                'untilOffset' => $untilOffset,
+                'content' => substr($content, $start, $untilOffset - $start),
+            ];
+        }
+
+        usort(
+            $sourceMatches,
+            static fn(array $a, array $b): int => $a['beginOffset'] <=> $b['beginOffset'],
+        );
+
+        return $sourceMatches;
     }
 }
