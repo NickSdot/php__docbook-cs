@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace DocbookCS\Tests\Unit\Sniff;
 
 use DocbookCS\Report\Violation;
+use DocbookCS\Runner\RunMode;
 use DocbookCS\Sniff\ExceptionNameSniff;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(ExceptionNameSniff::class)]
+#[CoversClass(RunMode::class)]
 #[CoversClass(Violation::class)]
 final class ExceptionNameSniffTest extends TestCase
 {
@@ -153,5 +155,40 @@ final class ExceptionNameSniffTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame('my-file.xml', $violations[0]->filePath);
+    }
+
+    #[Test]
+    public function itAddsSourceContentInFixMode(): void
+    {
+        $content = '<root><classname>RuntimeException</classname></root>';
+        $doc = $this->createDocument($content);
+
+        $violations = new ExceptionNameSniff(RunMode::Fix)->process($doc, $content, 'file.xml');
+
+        $beginOffset = (int) strpos($content, '<classname>');
+        $sourceContent = '<classname>RuntimeException</classname>';
+
+        self::assertCount(1, $violations);
+        self::assertSame($sourceContent, $violations[0]->content);
+        self::assertSame($beginOffset, $violations[0]->beginOffset);
+        self::assertSame($beginOffset + strlen($sourceContent), $violations[0]->untilOffset);
+        self::assertSame(1, $violations[0]->line);
+    }
+
+    #[Test]
+    public function itKeepsFixModeSourceContentAlignedAfterRegularClassnames(): void
+    {
+        $content = '<root><classname>RegularClass</classname><classname>RuntimeException</classname></root>';
+        $doc = $this->createDocument($content);
+
+        $violations = new ExceptionNameSniff(RunMode::Fix)->process($doc, $content, 'file.xml');
+
+        $sourceContent = '<classname>RuntimeException</classname>';
+        $beginOffset = (int) strpos($content, $sourceContent);
+
+        self::assertCount(1, $violations);
+        self::assertSame($sourceContent, $violations[0]->content);
+        self::assertSame($beginOffset, $violations[0]->beginOffset);
+        self::assertSame($beginOffset + strlen($sourceContent), $violations[0]->untilOffset);
     }
 }
