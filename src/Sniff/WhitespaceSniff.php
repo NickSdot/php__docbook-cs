@@ -34,7 +34,7 @@ final class WhitespaceSniff extends AbstractSniff implements Fixable
     {
         $violations = [];
         $offset = 0;
-        $lineNo = 1;
+        $line = 1;
 
         $lines = preg_split(self::LINE_ENDING_PATTERN, $content, -1, PREG_SPLIT_DELIM_CAPTURE);
         if ($lines === false) {
@@ -42,10 +42,11 @@ final class WhitespaceSniff extends AbstractSniff implements Fixable
         }
 
         for ($i = 0; $i < count($lines); $i += 2) {
-            $line = $lines[$i];
+            $lineContent = $lines[$i];
+            $lineContentLength = strlen($lineContent);
             $lineEnding = $lines[$i + 1] ?? '';
 
-            if (preg_match(self::WHITESPACE_PATTERN, $line, $matches)) {
+            if (preg_match(self::WHITESPACE_PATTERN, $lineContent, $matches)) {
                 $message = match (true) {
                     !empty($matches[1]) => 'Trailing whitespace detected.',
                     !empty($matches[2]) || !empty($matches[3]) => 'Mixed tabs and spaces in indentation.',
@@ -54,16 +55,16 @@ final class WhitespaceSniff extends AbstractSniff implements Fixable
 
                 $violations[] = $this->createViolation(
                     $filePath,
-                    $lineNo,
-                    $offset,
-                    $offset + strlen($line),
-                    $message,
                     $line,
+                    $offset,
+                    $offset + $lineContentLength,
+                    $message,
+                    $lineContent,
                 );
             }
 
-            $offset += strlen($line) + strlen($lineEnding);
-            $lineNo++;
+            $offset += $lineContentLength + strlen($lineEnding);
+            $line++;
         }
 
         return $violations;
