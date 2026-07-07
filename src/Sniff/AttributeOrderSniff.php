@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace DocbookCS\Sniff;
 
 use DocbookCS\Fix\Fixer\AttributeOrderFixer;
-use DocbookCS\Runner\RunMode;
 
 /**
  * Ensures that when an element has both xml:id and xmlns (or xmlns:*)
@@ -57,7 +56,7 @@ final class AttributeOrderSniff extends AbstractSniff implements Fixable
                 $beginOffset,
                 $beginOffset + strlen($fullMatch),
                 $violations,
-                $this->mode === RunMode::Fix ? $fullMatch : null,
+                $this->mode->isFixMode() ? $fullMatch : null,
             );
         }
 

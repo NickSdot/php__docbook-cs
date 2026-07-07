@@ -13,4 +13,9 @@ enum RunMode
     {
         return $flag ? self::Fix : self::Sniff;
     }
+
+    public function isFixMode(): bool
+    {
+        return $this === self::Fix;
+    }
 }

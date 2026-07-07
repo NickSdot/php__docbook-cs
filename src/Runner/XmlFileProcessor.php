@@ -113,7 +113,7 @@ final readonly class XmlFileProcessor
 
             $fileReport->addViolations($relevantViolations);
 
-            if ($sniff->mode !== RunMode::Fix || !$sniff instanceof Fixable) {
+            if (!$sniff->mode->isFixMode() || !$sniff instanceof Fixable) {
                 continue;
             }
 
