@@ -15,20 +15,20 @@ final class AttributeOrderFixer implements Fixer
     private const string ATTRIBUTE_TOKEN_PATTERN = '/\s+([a-zA-Z0-9:_-]+)\s*=\s*(?:"[^"]*"|\'[^\']*\')/';
 
     /** @throws FixerException */
-    public function process(Violation $violation): ?Fix
+    public function process(Violation $violation): Fix
     {
         if ($violation->content === null) {
             throw FixerException::cannotFixMissingContent();
         }
 
         if (!preg_match(self::OPENING_TAG_PATTERN, $violation->content, $matches)) {
-            return null;
+            throw FixerException::cannotFixInvalidContent($violation);
         }
 
         $fixedAttributeString = $this->fixedAttributeString($matches[2]);
 
         if ($fixedAttributeString === null) {
-            return null;
+            throw FixerException::cannotFixInvalidContent($violation);
         }
 
         return new Fix(

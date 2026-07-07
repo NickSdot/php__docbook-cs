@@ -11,5 +11,5 @@ use DocbookCS\Report\Violation;
 interface Fixer
 {
     /** @throws FixerException */
-    public function process(Violation $violation): ?Fix;
+    public function process(Violation $violation): Fix;
 }

@@ -15,20 +15,20 @@ final class ExceptionNameFixer implements Fixer
     private const string EXCEPTION_NAME_FORMAT = '<exceptionname%s>%s</exceptionname>';
 
     /** @throws FixerException */
-    public function process(Violation $violation): ?Fix
+    public function process(Violation $violation): Fix
     {
         if ($violation->content === null) {
             throw FixerException::cannotFixMissingContent();
         }
 
         if (!preg_match(self::CLASSNAME_PATTERN, $violation->content, $matches)) {
-            return null;
+            throw FixerException::cannotFixInvalidContent($violation);
         }
 
         $text = trim($matches[2]);
 
         if ($text === '' || !ExceptionNameSniff::looksLikeException($text)) {
-            return null;
+            throw FixerException::cannotFixInvalidContent($violation);
         }
 
         return new Fix(

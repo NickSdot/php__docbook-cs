@@ -41,8 +41,6 @@ final class ExceptionNameFixerTest extends TestCase
 
         $fix = new ExceptionNameFixer()->process($violations[0]);
 
-        self::assertInstanceOf(Fix::class, $fix);
-
         $result = new FixApplier()->apply($content, [$fix]);
 
         self::assertSame('<root><exceptionname>RuntimeException</exceptionname></root>', $result->content);
@@ -68,8 +66,6 @@ final class ExceptionNameFixerTest extends TestCase
         );
 
         $fix = new ExceptionNameFixer()->process($violations[0]);
-
-        self::assertInstanceOf(Fix::class, $fix);
 
         $result = new FixApplier()->apply($content, [$fix]);
 

@@ -41,8 +41,6 @@ final class AttributeOrderFixerTest extends TestCase
 
         $fix = new AttributeOrderFixer()->process($violations[0]);
 
-        self::assertInstanceOf(Fix::class, $fix);
-
         $result = new FixApplier()->apply($content, [$fix]);
 
         self::assertSame('<root xml:id="root" xmlns="urn:test"/>', $result->content);

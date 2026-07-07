@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace DocbookCS\Fix;
 
+use DocbookCS\Report\Violation;
+
 final class FixerException extends \RuntimeException
 {
     public static function cannotPersist(string $filePath): self
@@ -14,6 +16,16 @@ final class FixerException extends \RuntimeException
     public static function cannotFixMissingContent(): self
     {
         return new self('Violations cannot be content-less when passed to a fixer.');
+    }
+
+    public static function cannotFixInvalidContent(Violation $violation): self
+    {
+        return new self(sprintf(
+            'Cannot fix violation %s in %s on line %d because its source content is not valid fixer input.',
+            $violation->sniffCode,
+            $violation->filePath,
+            $violation->line,
+        ));
     }
 
     public static function cannotReadFixedContent(): self
