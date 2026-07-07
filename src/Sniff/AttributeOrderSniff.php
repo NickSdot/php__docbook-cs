@@ -76,7 +76,7 @@ final class AttributeOrderSniff extends AbstractSniff implements Fixable
         int $beginOffset,
         int $untilOffset,
         array &$violations,
-        ?string $content,
+        string $content,
     ): void {
         preg_match_all(self::ATTRIBUTE_NAME_PATTERN, $attrString, $matches);
         $attributes = $matches[1];
@@ -101,13 +101,13 @@ final class AttributeOrderSniff extends AbstractSniff implements Fixable
             $violations[] = $this->createViolation(
                 $filePath,
                 $line,
+                $beginOffset,
+                $untilOffset,
                 sprintf(
                     'Element <%s>: xml:id should appear before xmlns attributes.',
                     $tagName,
                 ),
-                beginOffset: $beginOffset,
-                untilOffset: $untilOffset,
-                content: $content,
+                $content,
             );
         }
     }

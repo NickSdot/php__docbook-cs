@@ -32,22 +32,22 @@ abstract class AbstractSniff implements SniffInterface
     protected function createViolation(
         string $filePath,
         int $line,
+        int $beginOffset,
+        int $untilOffset,
         string $message,
-        Severity $severity = Severity::ERROR,
-        int $beginOffset = 0,
-        int $untilOffset = 0,
         ?string $content = null,
+        Severity $severity = Severity::ERROR,
     ): Violation {
         return new Violation(
             sniffCode: static::getCode(),
             filePath: $filePath,
             line: $line,
-            message: $message,
-            severity: Severity::tryFrom($this->getProperty('severity', $severity->value))
-                ?: throw new \LogicException('Invalid severity level configured for ExceptionNameSniff.'),
             beginOffset: $beginOffset,
             untilOffset: $untilOffset,
+            message: $message,
             content: $content,
+            severity: Severity::tryFrom($this->getProperty('severity', $severity->value))
+                ?: throw new \LogicException('Invalid severity level configured for ExceptionNameSniff.'),
         );
     }
 }

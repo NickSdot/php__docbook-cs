@@ -24,7 +24,7 @@ final class ReportTest extends TestCase
         Severity $severity = Severity::ERROR,
         string $filePath = 'file.xml',
     ): Violation {
-        return new Violation($sniffCode, $filePath, $line, $message, $severity);
+        return new Violation($sniffCode, $filePath, $line, 0, 0, $message, severity: $severity);
     }
 
     #[Test]

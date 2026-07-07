@@ -48,6 +48,8 @@ final readonly class XmlFileProcessor
                 sniffCode: 'DocbookCS.Internal',
                 filePath: $fileReport->filePath,
                 line: 0,
+                beginOffset: 0,
+                untilOffset: 0,
                 message: 'Could not read file.',
                 severity: Severity::ERROR,
             ));
@@ -153,6 +155,8 @@ final readonly class XmlFileProcessor
                 sniffCode: 'DocbookCS.Internal',
                 filePath: $filePath,
                 line: $errors !== [] ? $errors[0]->line : 0,
+                beginOffset: 0,
+                untilOffset: 0,
                 message: 'XML parse error: ' . $message,
                 severity: Severity::ERROR,
             ));

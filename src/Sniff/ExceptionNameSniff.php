@@ -76,13 +76,13 @@ final class ExceptionNameSniff extends AbstractSniff implements Fixable
             $violations[] = $this->createViolation(
                 $filePath,
                 $node->getLineNo(),
+                $match['beginOffset'],
+                $match['untilOffset'],
                 sprintf(
                     '"%s" is wrapped in <classname> but should use <exceptionname>.',
                     $text,
                 ),
-                beginOffset: $match['beginOffset'],
-                untilOffset: $match['untilOffset'],
-                content: $match['content'],
+                $match['content'],
             );
         }
 

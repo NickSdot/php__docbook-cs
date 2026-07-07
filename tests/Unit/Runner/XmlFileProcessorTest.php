@@ -314,11 +314,11 @@ final class XmlFileProcessorTest extends TestCase
                         sniffCode: self::getCode(),
                         filePath: $filePath,
                         line: 2,
-                        message: 'Reported only.',
-                        severity: Severity::ERROR,
                         beginOffset: 0,
                         untilOffset: 7,
+                        message: 'Reported only.',
                         content: '<root/>',
+                        severity: Severity::ERROR,
                     ),
                 ];
             }
@@ -358,6 +358,8 @@ final class XmlFileProcessorTest extends TestCase
                         sniffCode: self::getCode(),
                         filePath: $filePath,
                         line: 1,
+                        beginOffset: 0,
+                        untilOffset: 7,
                         message: 'Missing source content.',
                         severity: Severity::ERROR,
                     ),
@@ -429,6 +431,8 @@ final class XmlFileProcessorTest extends TestCase
                         sniffCode: self::getCode(),
                         filePath: $filePath,
                         line: $line,
+                        beginOffset: 0,
+                        untilOffset: 0,
                         message: "violation at line {$line}",
                         severity: Severity::WARNING
                     ),

@@ -149,10 +149,10 @@ final class SimparaSniff extends AbstractSniff implements Fixable
             $violations[] = $this->createViolation(
                 $filePath,
                 $para->getLineNo(),
+                $match['beginOffset'],
+                $match['untilOffset'],
                 self::MESSAGE,
-                beginOffset: $match['beginOffset'],
-                untilOffset: $match['untilOffset'],
-                content: $match['content'],
+                $match['content'],
             );
         }
 

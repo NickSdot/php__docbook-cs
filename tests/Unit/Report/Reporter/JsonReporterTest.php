@@ -32,7 +32,7 @@ final class JsonReporterTest extends TestCase
         string $sniffCode = 'DocbookCS.Test',
         Severity $severity = Severity::ERROR,
     ): Violation {
-        return new Violation($sniffCode, 'filepath.xml', $line, $message, $severity);
+        return new Violation($sniffCode, 'filepath.xml', $line, 0, 0, $message, severity: $severity);
     }
 
     #[Test]

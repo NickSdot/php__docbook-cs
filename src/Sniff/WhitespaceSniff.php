@@ -55,10 +55,10 @@ final class WhitespaceSniff extends AbstractSniff implements Fixable
                 $violations[] = $this->createViolation(
                     $filePath,
                     $lineNo,
+                    $offset,
+                    $offset + strlen($line),
                     $message,
-                    beginOffset: $offset,
-                    untilOffset: $offset + strlen($line),
-                    content: $line,
+                    $line,
                 );
             }
 
