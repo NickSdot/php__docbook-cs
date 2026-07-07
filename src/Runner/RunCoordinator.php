@@ -15,7 +15,7 @@ use DocbookCS\Progress\ProgressInterface;
 use DocbookCS\Report\Report;
 use DocbookCS\Sniff\SniffInterface;
 
-final class SniffRunner
+final class RunCoordinator
 {
     private ProgressInterface $progress;
 

@@ -17,7 +17,7 @@ use DocbookCS\Report\Reporter\JsonReporter;
 use DocbookCS\Report\Reporter\ReporterInterface;
 use DocbookCS\Runner\RunMode;
 use DocbookCS\Runner\RunOptions;
-use DocbookCS\Runner\SniffRunner;
+use DocbookCS\Runner\RunCoordinator;
 
 final class Application
 {
@@ -108,7 +108,7 @@ final class Application
         );
 
         try {
-            $runner = new SniffRunner($progress);
+            $runner = new RunCoordinator($progress);
             $report = $runner->run($config, $runOptions);
         } catch (\Throwable $e) {
             $this->writeError('Runtime error: ' . $e->getMessage() . PHP_EOL);

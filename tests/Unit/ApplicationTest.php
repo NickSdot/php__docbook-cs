@@ -22,7 +22,7 @@ use DocbookCS\Report\Reporter\JsonReporter;
 use DocbookCS\Runner\EntityPreprocessor;
 use DocbookCS\Runner\RunMode;
 use DocbookCS\Runner\RunOptions;
-use DocbookCS\Runner\SniffRunner;
+use DocbookCS\Runner\RunCoordinator;
 use DocbookCS\Runner\XmlFileProcessor;
 use DocbookCS\Sniff\ExceptionNameSniff;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -43,7 +43,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(EntityPreprocessor::class)]
 #[CoversClass(RunMode::class)]
 #[CoversClass(RunOptions::class)]
-#[CoversClass(SniffRunner::class)]
+#[CoversClass(RunCoordinator::class)]
 #[CoversClass(XmlFileProcessor::class)]
 #[CoversClass(CheckstyleReporter::class)]
 #[CoversClass(JsonReporter::class)]
