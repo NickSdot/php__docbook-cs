@@ -6,11 +6,17 @@ namespace DocbookCS\Sniff;
 
 use DocbookCS\Report\Severity;
 use DocbookCS\Report\Violation;
+use DocbookCS\Runner\RunMode;
 
 abstract class AbstractSniff implements SniffInterface
 {
     /** @var array<string, string> */
     protected array $properties = [];
+
+    public function __construct(
+        public RunMode $mode = RunMode::Sniff,
+    ) {
+    }
 
     public function setProperty(string $name, string $value): void
     {
@@ -28,6 +34,9 @@ abstract class AbstractSniff implements SniffInterface
         int $line,
         string $message,
         Severity $severity = Severity::ERROR,
+        int $beginOffset = 0,
+        int $untilOffset = 0,
+        ?string $content = null,
     ): Violation {
         return new Violation(
             sniffCode: static::getCode(),
@@ -36,6 +45,9 @@ abstract class AbstractSniff implements SniffInterface
             message: $message,
             severity: Severity::tryFrom($this->getProperty('severity', $severity->value))
                 ?: throw new \LogicException('Invalid severity level configured for ExceptionNameSniff.'),
+            beginOffset: $beginOffset,
+            untilOffset: $untilOffset,
+            content: $content,
         );
     }
 }

@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace DocbookCS\Fix\Fixer;
 
 use DocbookCS\Fix\Fix;
-use DocbookCS\Fix\FixTarget;
+use DocbookCS\Fix\FixerException;
+use DocbookCS\Report\Violation;
 
 interface Fixer
 {
-    public function process(FixTarget $target): ?Fix;
+    /** @throws FixerException */
+    public function process(Violation $violation): ?Fix;
 }

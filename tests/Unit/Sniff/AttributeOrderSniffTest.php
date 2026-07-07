@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace DocbookCS\Tests\Unit\Sniff;
 
 use DocbookCS\Report\Violation;
+use DocbookCS\Runner\RunMode;
 use DocbookCS\Sniff\AttributeOrderSniff;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(AttributeOrderSniff::class)]
+#[CoversClass(RunMode::class)]
 #[CoversClass(Violation::class)]
 final class AttributeOrderSniffTest extends TestCase
 {
@@ -128,5 +130,22 @@ final class AttributeOrderSniffTest extends TestCase
             [],
             $sniff->process($doc, '', 'file.xml')
         );
+    }
+
+    #[Test]
+    public function itAddsSourceContentInFixMode(): void
+    {
+        $sniff = new AttributeOrderSniff(RunMode::Fix);
+
+        $content = '<root xmlns="urn:test" xml:id="root"/>';
+        $doc = $this->createDocument('<root/>');
+
+        $violations = $sniff->process($doc, $content, 'file.xml');
+
+        self::assertCount(1, $violations);
+        self::assertSame('<root xmlns="urn:test" xml:id="root"/>', $violations[0]->content);
+        self::assertSame(0, $violations[0]->beginOffset);
+        self::assertSame(38, $violations[0]->untilOffset);
+        self::assertSame(1, $violations[0]->line);
     }
 }

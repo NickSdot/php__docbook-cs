@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace DocbookCS\Sniff;
 
-use DocbookCS\Report\Violation;
+use DocbookCS\Runner\RunMode;
 
 /**
  * A sniff receives a DOMDocument (already loaded) and the file path,
- * then returns zero or more Violation value objects.
+ * then returns zero or more findings for reports and optional fixes.
  */
 interface SniffInterface
 {
+    public RunMode $mode { get; }
+
+    public function __construct(RunMode $mode);
+
     /**
      * Unique, human-readable code for this sniff (e.g. "DocbookCS.MySniff").
      */
@@ -20,7 +24,7 @@ interface SniffInterface
     /**
      * Apply the sniff to the given document.
      *
-     * @return list<Violation>
+     * @return list<\DocbookCS\Report\Violation>
      */
     public function process(\DOMDocument $document, string $content, string $filePath): array;
 

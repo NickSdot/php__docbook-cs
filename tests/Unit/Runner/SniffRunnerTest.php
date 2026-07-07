@@ -104,7 +104,11 @@ final class SniffRunnerTest extends TestCase
     #[Test]
     public function itAddsFileReportsForFilesWithViolations(): void
     {
-        $sniff = new class implements SniffInterface {
+        $sniff = new class (RunMode::Sniff) implements SniffInterface {
+            public function __construct(public RunMode $mode)
+            {
+            }
+
             public static function getCode(): string
             {
                 return 'Test.ViolatingSniff';
@@ -141,7 +145,11 @@ final class SniffRunnerTest extends TestCase
     #[Test]
     public function itStoresRelativePathsInFileReports(): void
     {
-        $sniff = new class implements SniffInterface {
+        $sniff = new class (RunMode::Sniff) implements SniffInterface {
+            public function __construct(public RunMode $mode)
+            {
+            }
+
             public static function getCode(): string
             {
                 return 'Test.ViolatingSniff';
@@ -181,8 +189,14 @@ final class SniffRunnerTest extends TestCase
     #[Test]
     public function itPassesPropertiesToSniffs(): void
     {
-        $sniffClass = new class implements SniffInterface {
+        $sniffClass = new class (RunMode::Sniff) implements SniffInterface {
             public static string $captured = '';
+            public static RunMode $capturedMode = RunMode::Sniff;
+
+            public function __construct(public RunMode $mode)
+            {
+                self::$capturedMode = $mode;
+            }
 
             public function setProperty(string $name, string $value): void
             {
@@ -203,9 +217,10 @@ final class SniffRunnerTest extends TestCase
         $config = $this->createConfig(sniffs: [new SniffEntry($sniffClass::class, ['someProp' => 'someValue'])]);
 
         $runner = new SniffRunner();
-        $runner->run($config);
+        $runner->run($config, new RunOptions(mode: RunMode::Fix));
 
         self::assertSame('someValue', $sniffClass::$captured);
+        self::assertSame(RunMode::Fix, $sniffClass::$capturedMode);
     }
 
     #[Test]
@@ -216,7 +231,7 @@ final class SniffRunnerTest extends TestCase
         $runner = new SniffRunner();
 
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('does not exist');
+        $this->expectExceptionMessageIsOrContains('does not exist');
 
         $runner->run($config);
     }
@@ -229,7 +244,7 @@ final class SniffRunnerTest extends TestCase
         $runner = new SniffRunner();
 
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('does not implement');
+        $this->expectExceptionMessageIsOrContains('does not implement');
 
         $runner->run($config);
     }
@@ -286,7 +301,11 @@ final class SniffRunnerTest extends TestCase
     #[Test]
     public function itReportsNoViolationsForFilesInDiffWithoutAddedLines(): void
     {
-        $sniff = new class implements SniffInterface {
+        $sniff = new class (RunMode::Sniff) implements SniffInterface {
+            public function __construct(public RunMode $mode)
+            {
+            }
+
             public static function getCode(): string
             {
                 return 'Test.ViolatingSniff';

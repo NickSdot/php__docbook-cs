@@ -4,18 +4,24 @@ declare(strict_types=1);
 
 namespace DocbookCS\Tests\Unit\Runner;
 
+use DocbookCS\Fix\Fixer\AttributeOrderFixer;
+use DocbookCS\Fix\FixerException;
 use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
 use DocbookCS\Report\Severity;
 use DocbookCS\Report\Violation;
 use DocbookCS\Runner\EntityPreprocessor;
+use DocbookCS\Runner\RunMode;
 use DocbookCS\Runner\XmlFileProcessor;
+use DocbookCS\Sniff\AttributeOrderSniff;
+use DocbookCS\Sniff\Fixable;
 use DocbookCS\Sniff\SniffInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(EntityPreprocessor::class)]
+#[CoversClass(AttributeOrderSniff::class)]
 #[CoversClass(FileReport::class)]
 #[CoversClass(Violation::class)]
 #[CoversClass(XmlFileProcessor::class)]
@@ -39,15 +45,11 @@ final class XmlFileProcessorTest extends TestCase
     }
 
     #[Test]
-    public function itPrefersReportPathOverFilePath(): void
+    public function itStoresRelativeFilePathInFileReports(): void
     {
-        $report = $this->processor()->processFile(
-            '/nonexistent/path/file.xml',
-            [],
-            'relative/file.xml'
-        );
+        $report = $this->processor()->processFile((getcwd() ?: '') . '/nonexistent/path/file.xml');
 
-        self::assertSame('relative/file.xml', $report->filePath);
+        self::assertSame('nonexistent/path/file.xml', $report->filePath);
     }
 
     #[Test]
@@ -292,12 +294,126 @@ final class XmlFileProcessorTest extends TestCase
         self::assertSame(0, $report->getViolationCount());
     }
 
+    #[Test]
+    public function itDoesNotFixViolationsFromNonFixableSniffs(): void
+    {
+        $sniff = new class (RunMode::Sniff) implements SniffInterface {
+            public function __construct(public RunMode $mode)
+            {
+            }
+
+            public static function getCode(): string
+            {
+                return 'Test.NonFixable';
+            }
+
+            public function process(\DOMDocument $document, string $content, string $filePath): array
+            {
+                return [
+                    new Violation(
+                        sniffCode: self::getCode(),
+                        filePath: $filePath,
+                        line: 2,
+                        message: 'Reported only.',
+                        severity: Severity::ERROR,
+                        beginOffset: 0,
+                        untilOffset: 7,
+                        content: '<root/>',
+                    ),
+                ];
+            }
+
+            public function setProperty(string $name, string $value): void
+            {
+            }
+        };
+
+        $report = $this->processor([$sniff])->processString($this->xml('<root/>'));
+
+        self::assertSame(1, $report->getViolationCount());
+    }
+
+    #[Test]
+    public function itThrowsWhenFixableSniffReportsViolationWithoutContentInFixMode(): void
+    {
+        $sniff = new class (RunMode::Fix) implements Fixable {
+            public function __construct(public RunMode $mode)
+            {
+            }
+
+            public static function getCode(): string
+            {
+                return 'Test.BrokenFixable';
+            }
+
+            public static function fixerClassName(): string
+            {
+                return AttributeOrderFixer::class;
+            }
+
+            public function process(\DOMDocument $document, string $content, string $filePath): array
+            {
+                return [
+                    new Violation(
+                        sniffCode: self::getCode(),
+                        filePath: $filePath,
+                        line: 1,
+                        message: 'Missing source content.',
+                        severity: Severity::ERROR,
+                    ),
+                ];
+            }
+
+            public function setProperty(string $name, string $value): void
+            {
+            }
+        };
+
+        $this->expectException(FixerException::class);
+        $this->expectExceptionMessageIsOrContains('Violations cannot be content-less when passed to a fixer.');
+
+        $this->processor([$sniff])->processString(
+            $this->xml('<root xmlns="urn:test" xml:id="root"/>')
+        );
+    }
+
+    #[Test]
+    public function itAppliesFixesToTheOriginalSourceWhenEntitiesExpandBeforeTheViolation(): void
+    {
+        $filePath = tempnam(sys_get_temp_dir(), 'docbook-cs-');
+        self::assertIsString($filePath);
+
+        $source = '<root>&prefix;<tag xmlns="urn:test" xml:id="id"/></root>';
+
+        try {
+            file_put_contents($filePath, $source);
+
+            $processor = $this->processor(
+                [new AttributeOrderSniff(RunMode::Fix)],
+                new EntityPreprocessor([
+                    'prefix' => 'expanded-content-before-tag',
+                ]),
+            );
+
+            $processor->processFile($filePath);
+
+            self::assertSame(
+                '<root>&prefix;<tag xml:id="id" xmlns="urn:test"/></root>',
+                file_get_contents($filePath),
+            );
+        } finally {
+            @unlink($filePath);
+        }
+    }
+
     /** @param list<int> $lines */
     private function sniff(array $lines): SniffInterface
     {
-        return new class ($lines) implements SniffInterface {
-            /** @param list<int> $lines */
-            public function __construct(private readonly array $lines)
+        $sniff = new class (RunMode::Sniff) implements SniffInterface {
+            /** @var list<int> */
+            public array $lines = [];
+
+            public function __construct(public RunMode $mode)
             {
             }
 
@@ -324,6 +440,10 @@ final class XmlFileProcessorTest extends TestCase
             {
             }
         };
+
+        $sniff->lines = $lines;
+
+        return $sniff;
     }
 
     /** @param list<SniffInterface> $sniffs */

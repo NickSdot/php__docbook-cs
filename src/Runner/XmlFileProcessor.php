@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace DocbookCS\Runner;
 
+use DocbookCS\Fix\Fix;
+use DocbookCS\Fix\FixApplier;
+use DocbookCS\Fix\FixerException;
 use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
 use DocbookCS\Report\Severity;
 use DocbookCS\Report\Violation;
+use DocbookCS\Sniff\Fixable;
 use DocbookCS\Sniff\SniffInterface;
 
-final class XmlFileProcessor
+final readonly class XmlFileProcessor
 {
     /** @var list<SniffInterface> */
     private array $sniffs;
@@ -30,17 +34,19 @@ final class XmlFileProcessor
         $this->report = $report ?? new Report();
     }
 
-    /** @param list<int>|null $changedLines */
-    public function processFile(string $filePath, ?array $changedLines = null, string $reportPath = ''): FileReport
+    /**
+     * @param list<int>|null $changedLines
+     * @throws FixerException
+     */
+    public function processFile(string $filePath, ?array $changedLines = null): FileReport
     {
-        $effectivePath = $reportPath !== '' ? $reportPath : $filePath;
-        $fileReport = new FileReport($effectivePath);
+        $fileReport = new FileReport($filePath);
 
         $content = @file_get_contents($filePath);
         if ($content === false) {
             $fileReport->addViolation(new Violation(
                 sniffCode: 'DocbookCS.Internal',
-                filePath: $effectivePath,
+                filePath: $fileReport->filePath,
                 line: 0,
                 message: 'Could not read file.',
                 severity: Severity::ERROR,
@@ -48,10 +54,20 @@ final class XmlFileProcessor
             return $fileReport;
         }
 
-        return $this->processContent($content, $effectivePath, $fileReport, $changedLines);
+        $result = $this->processContent($content, $fileReport->filePath, $fileReport, $changedLines);
+
+        if ($result->hasPendingFixesToPersist() && @file_put_contents($filePath, $result->fixedContent()) === false) {
+            throw FixerException::cannotPersist($filePath);
+        }
+
+        return $fileReport;
     }
 
-    /** @param list<int>|null $changedLines */
+    /**
+     * Testing Harvest
+     * @param list<int>|null $changedLines
+     * @throws FixerException
+     */
     public function processString(
         string $xmlContent,
         string $pseudoPath = 'input.xml',
@@ -59,43 +75,62 @@ final class XmlFileProcessor
     ): FileReport {
         $fileReport = new FileReport($pseudoPath);
 
-        return $this->processContent($xmlContent, $pseudoPath, $fileReport, $changedLines);
+        $this->processContent($xmlContent, $pseudoPath, $fileReport, $changedLines);
+
+        return $fileReport;
     }
 
-    /** @param list<int>|null $changedLines */
+    /**
+     * @param list<int>|null $changedLines
+     * @throws FixerException
+     */
     private function processContent(
-        string $content,
+        string $sourceContent,
         string $filePath,
         FileReport $fileReport,
         ?array $changedLines = null,
-    ): FileReport {
-        $content = $this->preprocessor->process($content);
+    ): XmlProcessingResult {
+        $processedContent = $this->preprocessor->process($sourceContent);
 
-        $document = $this->parseXml($content, $filePath, $fileReport);
+        $document = $this->parseXml($processedContent, $filePath, $fileReport);
         if ($document === null) {
-            return $fileReport;
+            return new XmlProcessingResult($fileReport);
         }
 
-        $violations = [];
+        /** @var list<Fix> $fixes */
+        $fixes = [];
+
         foreach ($this->sniffs as $sniff) {
             $start = microtime(true);
 
-            foreach ($sniff->process($document, $content, $filePath) as $violation) {
-                $violations[] = $violation;
-            }
+            $sniffViolations = $sniff->process($document, $sourceContent, $filePath);
 
             $this->report->addSniffTime($sniff::getCode(), microtime(true) - $start);
+
+            $relevantViolations = $changedLines !== null
+                ? $this->filterRelevantViolations($sniffViolations, $document, $changedLines)
+                : $sniffViolations;
+
+            $fileReport->addViolations($relevantViolations);
+
+            if ($sniff->mode !== RunMode::Fix || !$sniff instanceof Fixable) {
+                continue;
+            }
+
+            $fixer = new ($sniff::fixerClassName())();
+
+            foreach ($relevantViolations as $violation) {
+                $fix = $fixer->process($violation);
+                if ($fix !== null) {
+                    $fixes[] = $fix;
+                }
+            }
         }
 
-        if ($changedLines !== null) {
-            $violations = $this->filterRelevantViolations($violations, $document, $changedLines);
-        }
-
-        foreach ($violations as $violation) {
-            $fileReport->addViolation($violation);
-        }
-
-        return $fileReport;
+        return new XmlProcessingResult(
+            fileReport: $fileReport,
+            fixResult: $fixes !== [] ? new FixApplier()->apply($sourceContent, $fixes) : null,
+        );
     }
 
     private function parseXml(string $content, string $filePath, FileReport $fileReport): ?\DOMDocument

@@ -4,11 +4,22 @@ declare(strict_types=1);
 
 namespace DocbookCS\Tests\Integration\Fix;
 
+use DocbookCS\Fix\Fix;
+use DocbookCS\Fix\FixApplier;
+use DocbookCS\Fix\FixResult;
+use DocbookCS\Fix\Fixer\AttributeOrderFixer;
 use DocbookCS\Report\Violation;
+use DocbookCS\Runner\RunMode;
+use DocbookCS\Sniff\AttributeOrderSniff;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+#[CoversClass(AttributeOrderFixer::class)]
+#[CoversClass(AttributeOrderSniff::class)]
+#[CoversClass(Fix::class)]
+#[CoversClass(FixApplier::class)]
+#[CoversClass(FixResult::class)]
 #[CoversClass(Violation::class)]
 final class FixerTest extends TestCase
 {
@@ -33,10 +44,21 @@ final class FixerTest extends TestCase
         $content = '<root xmlns="urn:test" xml:id="root"/>';
         $document = $this->createDocument($content);
 
-        $this->markTestIncomplete('ExceptionName fixer is not wired in this pass.');
+        $violations = new AttributeOrderSniff(RunMode::Fix)->process(
+            $document,
+            $content,
+            'file.xml',
+        );
 
-        // todo
-        $result = (object) ['content' => 'foo', 'applied' => 1];
+        // fixer isn't yet applied
+        self::assertCount(1, $violations);
+        self::assertSame('<root xmlns="urn:test" xml:id="root"/>', $violations[0]->content);
+
+        $fix = new AttributeOrderFixer()->process($violations[0]);
+
+        self::assertInstanceOf(Fix::class, $fix);
+
+        $result = new FixApplier()->apply($content, [$fix]);
 
         self::assertSame('<root xml:id="root" xmlns="urn:test"/>', $result->content);
         self::assertSame(1, $result->applied);

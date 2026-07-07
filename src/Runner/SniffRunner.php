@@ -6,6 +6,7 @@ namespace DocbookCS\Runner;
 
 use DocbookCS\Config\ConfigData;
 use DocbookCS\Config\SniffEntry;
+use DocbookCS\Fix\FixerException;
 use DocbookCS\Path\EntityResolver;
 use DocbookCS\Path\PathLoader;
 use DocbookCS\Path\PathMatcher;
@@ -25,13 +26,14 @@ final class SniffRunner
 
     /**
      * @throws \RuntimeException if a sniff class cannot be found or does not implement SniffInterface.
-     * @throws \UnexpectedValueException if no files are found to scan.
+     * @throws \UnexpectedValueException if include or entity directories cannot be read.
+     * @throws FixerException
      */
     public function run(ConfigData $config, RunOptions $options = new RunOptions()): Report
     {
         $startTime = microtime(true);
 
-        $sniffs = $this->instantiateSniffs($config->getSniffs());
+        $sniffs = $this->instantiateSniffs($config->getSniffs(), $options->mode);
 
         $matcher = new PathMatcher($config->getBasePath(), $config->getExcludePatterns());
 
@@ -66,7 +68,6 @@ final class SniffRunner
             $fileReport = $processor->processFile(
                 $file,
                 $changedLines,
-                $this->makeRelative($file),
             );
 
             $violationCount = $fileReport->getViolationCount();
@@ -90,7 +91,7 @@ final class SniffRunner
      * @return list<SniffInterface>
      * @throws \RuntimeException if a sniff class cannot be found or does not implement SniffInterface.
      */
-    private function instantiateSniffs(array $entries): array
+    private function instantiateSniffs(array $entries, RunMode $mode): array
     {
         $sniffs = [];
 
@@ -104,7 +105,7 @@ final class SniffRunner
                 ));
             }
 
-            $instance = new $className();
+            $instance = new $className($mode);
 
             if (!$instance instanceof SniffInterface) {
                 throw new \RuntimeException(sprintf(
@@ -156,23 +157,6 @@ final class SniffRunner
         }
 
         return false;
-    }
-
-    private function makeRelative(string $absolutePath): string
-    {
-        $cwd = getcwd();
-        if ($cwd === false) {
-            return $absolutePath; // @codeCoverageIgnore
-        }
-
-        $prefix = rtrim(str_replace('\\', '/', $cwd), '/') . '/';
-        $normalized = str_replace('\\', '/', $absolutePath);
-
-        if (str_starts_with($normalized, $prefix)) {
-            return substr($normalized, strlen($prefix));
-        }
-
-        return $absolutePath; // @codeCoverageIgnore
     }
 
     /**

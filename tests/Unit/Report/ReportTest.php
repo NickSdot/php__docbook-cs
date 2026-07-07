@@ -67,6 +67,14 @@ final class ReportTest extends TestCase
     }
 
     #[Test]
+    public function itStoresFileReportPathRelativeToWorkingDirectory(): void
+    {
+        $fileReport = new FileReport((getcwd() ?: '') . '/src/chapter.xml');
+
+        self::assertSame('src/chapter.xml', $fileReport->filePath);
+    }
+
+    #[Test]
     public function itKeysFileReportsByFilePath(): void
     {
         $report = new Report();

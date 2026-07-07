@@ -11,7 +11,10 @@ final readonly class Violation
         public string $filePath,
         public int $line,
         public string $message,
-        public Severity $severity = Severity::WARNING
+        public Severity $severity = Severity::WARNING,
+        public int $beginOffset = 0,
+        public int $untilOffset = 0,
+        public ?string $content = null,
     ) {
     }
 }
