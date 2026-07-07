@@ -48,11 +48,13 @@ final class AttributeOrderSniff extends AbstractSniff implements Fixable
                 continue;
             }
 
+            $beginOffset = (int) $offset;
+
             $this->checkAttributes(
                 $tagName,
                 $attrString,
                 $filePath,
-                $this->lineFromOffset($content, $beginOffset = (int)$offset),
+                $this->lineFromOffset($content, $beginOffset),
                 $beginOffset,
                 $beginOffset + strlen($fullMatch),
                 $violations,
@@ -97,19 +99,21 @@ final class AttributeOrderSniff extends AbstractSniff implements Fixable
             }
         }
 
-        if ($xmlIdPos !== null && $xmlnsPos !== PHP_INT_MAX && $xmlIdPos > $xmlnsPos) {
-            $violations[] = $this->createViolation(
-                $filePath,
-                $line,
-                $beginOffset,
-                $untilOffset,
-                sprintf(
-                    'Element <%s>: xml:id should appear before xmlns attributes.',
-                    $tagName,
-                ),
-                $content,
-            );
+        if ($xmlIdPos === null || $xmlnsPos === PHP_INT_MAX || $xmlIdPos <= $xmlnsPos) {
+            return;
         }
+
+        $violations[] = $this->createViolation(
+            $filePath,
+            $line,
+            $beginOffset,
+            $untilOffset,
+            sprintf(
+                'Element <%s>: xml:id should appear before xmlns attributes.',
+                $tagName,
+            ),
+            $content,
+        );
     }
 
     private function lineFromOffset(string $content, int $offset): int
