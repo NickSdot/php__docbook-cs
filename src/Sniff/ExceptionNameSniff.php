@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DocbookCS\Sniff;
 
 use DocbookCS\Fix\Fixer\ExceptionNameFixer;
+use DocbookCS\Violation\SourceRange;
 
 /**
  * Detects exception/error class names wrapped in <classname> that
@@ -16,6 +17,8 @@ use DocbookCS\Fix\Fixer\ExceptionNameFixer;
  */
 final class ExceptionNameSniff extends AbstractSniff implements Fixable
 {
+    private const string ELEMENT_NAME = 'classname';
+
     /**
      * Default suffixes that indicate the class is an exception or error.
      * @var list<string>
@@ -83,6 +86,7 @@ final class ExceptionNameSniff extends AbstractSniff implements Fixable
                     $text,
                 ),
                 $match['content'],
+                affectedRanges: $match['affectedRanges'],
             );
         }
 
@@ -101,7 +105,13 @@ final class ExceptionNameSniff extends AbstractSniff implements Fixable
     }
 
     /**
-     * @return list<array{beginOffset: int, untilOffset: int, content: string, text: string}>
+     * @return list<array{
+     *     beginOffset: int,
+     *     untilOffset: int,
+     *     content: string,
+     *     text: string,
+     *     affectedRanges: non-empty-list<SourceRange>
+     * }>
      */
     private function sourceMatches(string $content): array
     {
@@ -109,14 +119,33 @@ final class ExceptionNameSniff extends AbstractSniff implements Fixable
 
         $sourceMatches = [];
         foreach ($matches[0] as $i => [$fullMatch, $offset]) {
+            $offset = (int) $offset;
+            $closingOffset = $offset + (int) strrpos($fullMatch, '</classname>');
             $sourceMatches[] = [
-                'beginOffset' => (int) $offset,
-                'untilOffset' => (int) $offset + strlen($fullMatch),
+                'beginOffset' => $offset,
+                'untilOffset' => $offset + strlen($fullMatch),
                 'content' => $fullMatch,
                 'text' => trim($matches[1][$i][0]),
+                'affectedRanges' => [
+                    new SourceRange(
+                        $this->lineFromOffset($content, $offset),
+                        $offset + 1,
+                        $offset + 1 + strlen(self::ELEMENT_NAME),
+                    ),
+                    new SourceRange(
+                        $this->lineFromOffset($content, $closingOffset),
+                        $closingOffset + 2,
+                        $closingOffset + 2 + strlen(self::ELEMENT_NAME),
+                    ),
+                ],
             ];
         }
 
         return $sourceMatches;
+    }
+
+    private function lineFromOffset(string $content, int $offset): int
+    {
+        return substr_count($content, "\n", 0, $offset) + 1;
     }
 }

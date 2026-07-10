@@ -6,6 +6,7 @@ namespace DocbookCS\Sniff;
 
 use DocbookCS\Runner\RunMode;
 use DocbookCS\Violation\Severity;
+use DocbookCS\Violation\SourceRange;
 use DocbookCS\Violation\Violation;
 
 abstract class AbstractSniff implements SniffInterface
@@ -28,7 +29,10 @@ abstract class AbstractSniff implements SniffInterface
         return $this->properties[$name] ?? $default;
     }
 
-    /** @throws \LogicException if an invalid severity level is configured */
+    /**
+     * @param list<SourceRange> $affectedRanges
+     * @throws \LogicException if an invalid severity level is configured
+     */
     protected function createViolation(
         string $filePath,
         int $line,
@@ -37,6 +41,7 @@ abstract class AbstractSniff implements SniffInterface
         string $message,
         ?string $content = null,
         Severity $severity = Severity::ERROR,
+        array $affectedRanges = [],
     ): Violation {
         return new Violation(
             sniffCode: static::getCode(),
@@ -48,6 +53,7 @@ abstract class AbstractSniff implements SniffInterface
             content: $content,
             severity: Severity::tryFrom($this->getProperty('severity', $severity->value))
                 ?: throw new \LogicException('Invalid severity level configured for ExceptionNameSniff.'),
+            affectedRanges: $affectedRanges,
         );
     }
 }

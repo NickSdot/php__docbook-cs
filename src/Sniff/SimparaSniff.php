@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace DocbookCS\Sniff;
 
 use DocbookCS\Fix\Fixer\SimparaFixer;
+use DocbookCS\Violation\SourceRange;
 
 final class SimparaSniff extends AbstractSniff implements Fixable
 {
+    private const string ELEMENT_NAME = 'para';
     private const string MESSAGE = '<para> contains only inline content and should be <simpara>.';
     private const string PARA_TAG_PATTERN = '/<\/?para\b[^>]*>/';
 
@@ -153,6 +155,7 @@ final class SimparaSniff extends AbstractSniff implements Fixable
                 $match['untilOffset'],
                 self::MESSAGE,
                 $match['content'],
+                affectedRanges: $match['affectedRanges'],
             );
         }
 
@@ -195,12 +198,18 @@ final class SimparaSniff extends AbstractSniff implements Fixable
     }
 
     /**
-     * @return list<array{beginOffset: int, untilOffset: int, content: string}>
+     * @return list<array{
+     *     beginOffset: int,
+     *     untilOffset: int,
+     *     content: string,
+     *     affectedRanges: non-empty-list<SourceRange>
+     * }>
      */
     private function sourceMatches(string $content): array
     {
         preg_match_all(self::PARA_TAG_PATTERN, $content, $matches, PREG_OFFSET_CAPTURE);
 
+        /** @var list<array{offset: int, range: SourceRange}> $stack */
         $stack = [];
         $sourceMatches = [];
 
@@ -208,19 +217,35 @@ final class SimparaSniff extends AbstractSniff implements Fixable
             $offset = (int) $offset;
 
             if (!str_starts_with($tag, '</')) {
-                $stack[] = $offset;
+                $stack[] = [
+                    'offset' => $offset,
+                    'range' => new SourceRange(
+                        $this->lineFromOffset($content, $offset),
+                        $offset + 1,
+                        $offset + 1 + strlen(self::ELEMENT_NAME),
+                    ),
+                ];
                 continue;
             }
 
-            if (null === $start = array_pop($stack)) {
+            if (null === $opening = array_pop($stack)) {
                 continue;
             }
 
+            $start = $opening['offset'];
             $untilOffset = $offset + strlen($tag);
             $sourceMatches[] = [
                 'beginOffset' => $start,
                 'untilOffset' => $untilOffset,
                 'content' => substr($content, $start, $untilOffset - $start),
+                'affectedRanges' => [
+                    $opening['range'],
+                    new SourceRange(
+                        $this->lineFromOffset($content, $offset),
+                        $offset + 2,
+                        $offset + 2 + strlen(self::ELEMENT_NAME),
+                    ),
+                ],
             ];
         }
 
@@ -230,5 +255,10 @@ final class SimparaSniff extends AbstractSniff implements Fixable
         );
 
         return $sourceMatches;
+    }
+
+    private function lineFromOffset(string $content, int $offset): int
+    {
+        return substr_count($content, "\n", 0, $offset) + 1;
     }
 }

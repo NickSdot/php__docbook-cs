@@ -6,6 +6,12 @@ namespace DocbookCS\Violation;
 
 final readonly class Violation
 {
+    /** @var non-empty-list<SourceRange> */
+    public array $affectedRanges;
+
+    /**
+     * @param list<SourceRange> $affectedRanges
+     */
     public function __construct(
         public string $sniffCode,
         public string $filePath,
@@ -15,6 +21,10 @@ final readonly class Violation
         public string $message,
         public ?string $content = null,
         public Severity $severity = Severity::WARNING,
+        array $affectedRanges = [],
     ) {
+        $this->affectedRanges = $affectedRanges !== []
+            ? array_values($affectedRanges)
+            : [new SourceRange($line, $beginOffset, $untilOffset)];
     }
 }
