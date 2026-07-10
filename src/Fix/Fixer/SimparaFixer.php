@@ -5,16 +5,18 @@ declare(strict_types=1);
 namespace DocbookCS\Fix\Fixer;
 
 use DocbookCS\Fix\Fix;
+use DocbookCS\Fix\FixPlan;
 use DocbookCS\Fix\FixerException;
 use DocbookCS\Violation\Violation;
 
 final class SimparaFixer implements Fixer
 {
+    private const string SOURCE_ELEMENT = 'para';
+    private const string TARGET_ELEMENT = 'simpara';
     private const string PARA_PATTERN = '/^<para\b([^>]*)>(.*)<\/para>$/s';
-    private const string SIMPARA_FORMAT = '<simpara%s>%s</simpara>';
 
     /** @throws FixerException */
-    public function process(Violation $violation): Fix
+    public function process(Violation $violation): FixPlan
     {
         if ($violation->content === null) {
             throw FixerException::cannotFixMissingContent();
@@ -24,13 +26,23 @@ final class SimparaFixer implements Fixer
             throw FixerException::cannotFixInvalidContent($violation);
         }
 
-        return new Fix(
-            $violation->filePath,
-            $violation->beginOffset,
-            $violation->untilOffset,
-            sprintf(self::SIMPARA_FORMAT, $matches[1], $matches[2]),
-            $violation->sniffCode,
-            $violation->line,
-        );
+        if (count($violation->affectedRanges) !== 2) {
+            throw FixerException::cannotFixInvalidContent($violation);
+        }
+
+        $fixes = [];
+        foreach ($violation->affectedRanges as $range) {
+            $fixes[] = new Fix(
+                $violation->filePath,
+                $range->beginOffset,
+                $range->untilOffset,
+                self::TARGET_ELEMENT,
+                $violation->sniffCode,
+                $range->line,
+                self::SOURCE_ELEMENT,
+            );
+        }
+
+        return new FixPlan(...$fixes);
     }
 }

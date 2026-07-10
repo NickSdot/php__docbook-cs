@@ -13,6 +13,7 @@ final readonly class Fix
         public string $replacement,
         public string $sniffCode,
         public int $line,
+        public ?string $expectedContent = null,
     ) {
     }
 }
