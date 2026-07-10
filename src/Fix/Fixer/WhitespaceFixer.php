@@ -8,6 +8,10 @@ use DocbookCS\Fix\Fix;
 use DocbookCS\Fix\FixerException;
 use DocbookCS\Violation\Violation;
 
+/**
+ * Backward-compatible aggregate fixer for WhitespaceSniff.
+ * New configurations should use the focused whitespace fixers.
+ */
 final class WhitespaceFixer implements Fixer
 {
     /** @throws FixerException */

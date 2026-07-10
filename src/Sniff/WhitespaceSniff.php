@@ -7,12 +7,8 @@ namespace DocbookCS\Sniff;
 use DocbookCS\Fix\Fixer\WhitespaceFixer;
 
 /**
- * Detects whitespace and indentation issues in DocBook source files.
- *
- * The following violations are detected:
- * - Trailing whitespace at the end of a line
- * - Spaces used before tabs in indentation
- * - Mixed use of tabs and spaces within indentation
+ * Backward-compatible aggregate of the focused whitespace rules.
+ * New configurations should use TrailingWhitespaceSniff and MixedIndentationSniff.
  */
 final class WhitespaceSniff extends AbstractSniff implements Fixable
 {

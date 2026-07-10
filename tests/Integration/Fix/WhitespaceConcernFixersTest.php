@@ -1,0 +1,66 @@
+<?php
+
+declare(strict_types=1);
+
+namespace DocbookCS\Tests\Integration\Fix;
+
+use DocbookCS\Fix\Fix;
+use DocbookCS\Fix\FixApplier;
+use DocbookCS\Fix\Fixer\MixedIndentationFixer;
+use DocbookCS\Fix\Fixer\TrailingWhitespaceFixer;
+use DocbookCS\Fix\FixResult;
+use DocbookCS\Runner\RunMode;
+use DocbookCS\Sniff\MixedIndentationSniff;
+use DocbookCS\Sniff\TrailingWhitespaceSniff;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+
+#[CoversClass(Fix::class)]
+#[CoversClass(FixApplier::class)]
+#[CoversClass(FixResult::class)]
+#[CoversClass(MixedIndentationFixer::class)]
+#[CoversClass(MixedIndentationSniff::class)]
+#[CoversClass(TrailingWhitespaceFixer::class)]
+#[CoversClass(TrailingWhitespaceSniff::class)]
+final class WhitespaceConcernFixersTest extends TestCase
+{
+    #[Test]
+    public function itFixesIndependentWhitespaceConcernsTogether(): void
+    {
+        $content = "<root> \n \t<tag/>  \n</root>";
+        $document = new \DOMDocument();
+        $document->loadXML($content);
+
+        $trailingViolations = new TrailingWhitespaceSniff(RunMode::Fix)->process(
+            $document,
+            $content,
+            'file.xml',
+        );
+        $indentationViolations = new MixedIndentationSniff(RunMode::Fix)->process(
+            $document,
+            $content,
+            'file.xml',
+        );
+
+        self::assertCount(2, $trailingViolations);
+        self::assertCount(1, $indentationViolations);
+
+        $fixes = [];
+        $trailingFixer = new TrailingWhitespaceFixer();
+        foreach ($trailingViolations as $violation) {
+            $fixes[] = $trailingFixer->process($violation);
+        }
+
+        $indentationFixer = new MixedIndentationFixer();
+        foreach ($indentationViolations as $violation) {
+            $fixes[] = $indentationFixer->process($violation);
+        }
+
+        $result = new FixApplier()->apply($content, $fixes);
+
+        self::assertSame("<root>\n  <tag/>\n</root>", $result->content);
+        self::assertSame(3, $result->applied);
+        self::assertSame(0, $result->skipped);
+    }
+}
