@@ -32,4 +32,20 @@ final class FixerException extends \RuntimeException
     {
         return new self('Cannot read fixed content when no fix application was attempted.');
     }
+
+    public static function invalidFixedXml(string $filePath): self
+    {
+        return new self(sprintf(
+            'Fixers produced invalid XML for %s; no changes were written.',
+            $filePath,
+        ));
+    }
+
+    public static function didNotConverge(string $filePath): self
+    {
+        return new self(sprintf(
+            'Fixers did not converge for %s; no changes were written.',
+            $filePath,
+        ));
+    }
 }

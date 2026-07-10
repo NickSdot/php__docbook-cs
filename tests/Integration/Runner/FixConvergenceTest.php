@@ -1,0 +1,239 @@
+<?php
+
+declare(strict_types=1);
+
+namespace DocbookCS\Tests\Integration\Runner;
+
+use DocbookCS\Fix\Fixer\AttributeOrderFixer;
+use DocbookCS\Fix\FixerException;
+use DocbookCS\Runner\RunMode;
+use DocbookCS\Runner\XmlFileProcessor;
+use DocbookCS\Sniff\AbstractSniff;
+use DocbookCS\Sniff\ExceptionNameSniff;
+use DocbookCS\Sniff\Fixable;
+use DocbookCS\Sniff\SimparaSniff;
+use DocbookCS\Tests\Support\Fix\LineBreakFixer;
+use DocbookCS\Tests\Support\Fix\ToggleElementFixer;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+
+#[CoversClass(XmlFileProcessor::class)]
+final class FixConvergenceTest extends TestCase
+{
+    #[Test]
+    public function itAppliesIndependentSameLineFixesAndReportsTheFinalSource(): void
+    {
+        $source = '<root><para>A</para><para><classname>RuntimeException</classname></para></root>';
+        $filePath = $this->temporaryFile($source);
+
+        try {
+            $processor = new XmlFileProcessor([
+                new SimparaSniff(RunMode::Fix),
+                new ExceptionNameSniff(RunMode::Fix),
+            ]);
+
+            $report = $processor->processFile($filePath);
+
+            self::assertSame(
+                '<root><simpara>A</simpara><simpara><exceptionname>RuntimeException</exceptionname></simpara></root>',
+                file_get_contents($filePath),
+            );
+            self::assertFalse($report->hasViolations());
+        } finally {
+            @unlink($filePath);
+        }
+    }
+
+    #[Test]
+    public function itReportsRemainingViolationsAtTheirFinalLines(): void
+    {
+        $source = '<root><line-break/><bad/></root>';
+        $filePath = $this->temporaryFile($source);
+
+        try {
+            $lineBreakSniff = new class (RunMode::Fix) extends AbstractSniff implements Fixable {
+                private const string ELEMENT = '<line-break/>';
+
+                public static function getCode(): string
+                {
+                    return 'Test.LineBreak';
+                }
+
+                public static function fixerClassName(): string
+                {
+                    return LineBreakFixer::class;
+                }
+
+                public function process(\DOMDocument $document, string $content, string $filePath): array
+                {
+                    $offset = strpos($content, self::ELEMENT);
+                    if ($offset === false) {
+                        return [];
+                    }
+
+                    return [$this->createViolation(
+                        $filePath,
+                        substr_count($content, "\n", 0, $offset) + 1,
+                        $offset,
+                        $offset + strlen(self::ELEMENT),
+                        'Replace the line-break marker.',
+                        self::ELEMENT,
+                    )];
+                }
+            };
+            $badElementSniff = new class (RunMode::Fix) extends AbstractSniff {
+                public static function getCode(): string
+                {
+                    return 'Test.BadElement';
+                }
+
+                public function process(\DOMDocument $document, string $content, string $filePath): array
+                {
+                    $element = $document->getElementsByTagName('bad')->item(0);
+                    if (!$element instanceof \DOMElement) {
+                        return [];
+                    }
+
+                    $offset = strpos($content, '<bad/>');
+                    if ($offset === false) {
+                        return [];
+                    }
+
+                    return [$this->createViolation(
+                        $filePath,
+                        $element->getLineNo(),
+                        $offset,
+                        $offset + strlen('<bad/>'),
+                        'Bad element.',
+                        '<bad/>',
+                    )];
+                }
+            };
+            $processor = new XmlFileProcessor([
+                $lineBreakSniff,
+                $badElementSniff,
+            ]);
+
+            $report = $processor->processFile($filePath);
+
+            self::assertSame("<root>\n<bad/></root>", file_get_contents($filePath));
+            self::assertSame(1, $report->getViolationCount());
+            self::assertSame(2, $report->getViolations()[0]->line);
+        } finally {
+            @unlink($filePath);
+        }
+    }
+
+    #[Test]
+    public function itDoesNotPersistFixesThatCycle(): void
+    {
+        $source = '<root><alpha/></root>';
+        $filePath = $this->temporaryFile($source);
+
+        try {
+            $toggleElementSniff = new class (RunMode::Fix) extends AbstractSniff implements Fixable {
+                public static function getCode(): string
+                {
+                    return 'Test.ToggleElement';
+                }
+
+                public static function fixerClassName(): string
+                {
+                    return ToggleElementFixer::class;
+                }
+
+                public function process(\DOMDocument $document, string $content, string $filePath): array
+                {
+                    $element = str_contains($content, '<alpha/>') ? '<alpha/>' : '<beta/>';
+                    $offset = strpos($content, $element);
+                    if ($offset === false) {
+                        return [];
+                    }
+
+                    return [$this->createViolation(
+                        $filePath,
+                        1,
+                        $offset,
+                        $offset + strlen($element),
+                        'Toggle the element.',
+                        $element,
+                    )];
+                }
+            };
+            $processor = new XmlFileProcessor([
+                $toggleElementSniff,
+            ]);
+
+            try {
+                $processor->processFile($filePath);
+                self::fail('Expected the cycling fixer to fail.');
+            } catch (FixerException $exception) {
+                self::assertStringContainsString('did not converge', $exception->getMessage());
+            }
+
+            self::assertSame($source, file_get_contents($filePath));
+        } finally {
+            @unlink($filePath);
+        }
+    }
+
+    #[Test]
+    public function itDoesNotPersistFixesThatProduceInvalidXml(): void
+    {
+        $source = '<root><valid/></root>';
+        $filePath = $this->temporaryFile($source);
+
+        try {
+            $invalidXmlSniff = new class (RunMode::Fix) extends AbstractSniff implements Fixable {
+                public static function getCode(): string
+                {
+                    return 'Test.InvalidXml';
+                }
+
+                public static function fixerClassName(): string
+                {
+                    return AttributeOrderFixer::class;
+                }
+
+                public function process(\DOMDocument $document, string $content, string $filePath): array
+                {
+                    $offset = strpos($content, '<valid/>');
+                    if ($offset === false) {
+                        return [];
+                    }
+
+                    return [$this->createViolation(
+                        $filePath,
+                        1,
+                        $offset,
+                        $offset + strlen('<valid/>'),
+                        'Produce invalid XML.',
+                        '<tag xmlns="urn:test" xml:id="id">',
+                    )];
+                }
+            };
+            $processor = new XmlFileProcessor([$invalidXmlSniff]);
+
+            try {
+                $processor->processFile($filePath);
+                self::fail('Expected the invalid fixer result to fail.');
+            } catch (FixerException $exception) {
+                self::assertStringContainsString('produced invalid XML', $exception->getMessage());
+            }
+
+            self::assertSame($source, file_get_contents($filePath));
+        } finally {
+            @unlink($filePath);
+        }
+    }
+
+    private function temporaryFile(string $content): string
+    {
+        $filePath = tempnam(sys_get_temp_dir(), 'docbook-cs-');
+        self::assertIsString($filePath);
+        file_put_contents($filePath, $content);
+
+        return $filePath;
+    }
+}

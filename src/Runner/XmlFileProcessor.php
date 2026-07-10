@@ -6,6 +6,8 @@ namespace DocbookCS\Runner;
 
 use DocbookCS\Fix\Fix;
 use DocbookCS\Fix\FixApplier;
+use DocbookCS\Fix\FixPlan;
+use DocbookCS\Fix\FixResult;
 use DocbookCS\Fix\FixerException;
 use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
@@ -16,6 +18,8 @@ use DocbookCS\Violation\Violation;
 
 final readonly class XmlFileProcessor
 {
+    private const int MAX_FIX_PASSES = 20;
+
     /** @var list<SniffInterface> */
     private array $sniffs;
 
@@ -87,19 +91,87 @@ final readonly class XmlFileProcessor
      * @throws FixerException
      */
     private function processContent(
-        string $sourceContent,
+        string $originalContent,
         string $filePath,
         FileReport $fileReport,
         ?array $changedLines = null,
     ): XmlProcessingResult {
-        $processedContent = $this->preprocessor->process($sourceContent);
+        $sourceContent = $originalContent;
+        $seenContentHashes = [hash('sha256', $sourceContent) => true];
+        $applied = 0;
+        $skipped = 0;
+        $fixPasses = 0;
 
-        $document = $this->parseXml($processedContent, $filePath, $fileReport);
-        if ($document === null) {
-            return new XmlProcessingResult($fileReport);
+        while (true) {
+            $passReport = new FileReport($filePath);
+            $processedContent = $this->preprocessor->process($sourceContent);
+
+            $document = $this->parseXml($processedContent, $filePath, $passReport);
+            if ($document === null) {
+                if ($sourceContent !== $originalContent) {
+                    throw FixerException::invalidFixedXml($filePath);
+                }
+
+                break;
+            }
+
+            $fixes = $this->runSniffs(
+                $document,
+                $sourceContent,
+                $filePath,
+                $passReport,
+                $changedLines,
+            );
+
+            if ($fixes === []) {
+                break;
+            }
+
+            $fixResult = new FixApplier()->apply($sourceContent, $fixes);
+            $applied += $fixResult->applied;
+            $skipped += $fixResult->skipped;
+
+            if ($fixResult->applied === 0) {
+                break;
+            }
+
+            $fixPasses++;
+            $fixedContentHash = hash('sha256', $fixResult->content);
+
+            if (
+                $fixPasses > self::MAX_FIX_PASSES
+                || $fixResult->content === $sourceContent
+                || isset($seenContentHashes[$fixedContentHash])
+            ) {
+                throw FixerException::didNotConverge($filePath);
+            }
+
+            $seenContentHashes[$fixedContentHash] = true;
+            $sourceContent = $fixResult->content;
         }
 
-        /** @var list<Fix> $fixes */
+        return $this->finalizeResult(
+            $originalContent,
+            $sourceContent,
+            $fileReport,
+            $passReport,
+            $applied,
+            $skipped,
+        );
+    }
+
+    /**
+     * @param list<int>|null $changedLines
+     * @return list<Fix|FixPlan>
+     * @throws FixerException
+     */
+    private function runSniffs(
+        \DOMDocument $document,
+        string $sourceContent,
+        string $filePath,
+        FileReport $fileReport,
+        ?array $changedLines,
+    ): array {
         $fixes = [];
 
         foreach ($this->sniffs as $sniff) {
@@ -126,9 +198,24 @@ final readonly class XmlFileProcessor
             }
         }
 
+        return $fixes;
+    }
+
+    private function finalizeResult(
+        string $originalContent,
+        string $sourceContent,
+        FileReport $fileReport,
+        FileReport $passReport,
+        int $applied,
+        int $skipped,
+    ): XmlProcessingResult {
+        $fileReport->addViolations($passReport->getViolations());
+
         return new XmlProcessingResult(
             fileReport: $fileReport,
-            fixResult: $fixes !== [] ? new FixApplier()->apply($sourceContent, $fixes) : null,
+            fixResult: $sourceContent !== $originalContent
+                ? new FixResult($sourceContent, $applied, $skipped)
+                : null,
         );
     }
 
