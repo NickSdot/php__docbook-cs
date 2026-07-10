@@ -56,14 +56,16 @@ final class FixApplier
             $acceptedPlans++;
         }
 
-        for ($i = count($acceptedFixes) - 1; $i >= 0; $i--) {
-            $fix = $acceptedFixes[$i];
+        $fixedContent = '';
+        $sourceOffset = 0;
 
-            $prefix = substr($content, 0, $fix->beginOffset);
-            $suffix = substr($content, $fix->untilOffset);
-
-            $content = "$prefix{$fix->replacement}$suffix";
+        foreach ($acceptedFixes as $fix) {
+            $fixedContent .= substr($content, $sourceOffset, $fix->beginOffset - $sourceOffset);
+            $fixedContent .= $fix->replacement;
+            $sourceOffset = $fix->untilOffset;
         }
+
+        $content = $fixedContent . substr($content, $sourceOffset);
 
         return new FixResult(
             content: $content,
@@ -147,6 +149,12 @@ final class FixApplier
      */
     private function insertFix(array &$fixes, Fix $fix): void
     {
+        $lastIndex = count($fixes) - 1;
+        if ($lastIndex < 0 || self::compare($fixes[$lastIndex], $fix) < 0) {
+            $fixes[] = $fix;
+            return;
+        }
+
         array_splice($fixes, $this->insertionIndex($fixes, $fix), 0, [$fix]);
     }
 
