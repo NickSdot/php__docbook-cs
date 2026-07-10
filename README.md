@@ -63,6 +63,17 @@ Register it in your config:
 <sniff class="Acme\DocbookSniffs\MySniff" />
 ```
 
+## CLI Scope
+
+By default, DocbookCS scans the selected files and any XML files reached through
+referenced `SYSTEM` entities. `--strict` limits the run to exactly the files or
+directories selected on the command line or in the configuration.
+
+With `--diff`, source files remain restricted to violations whose source range
+intersects an added line. Referenced target files are scanned as whole files
+unless `--strict` is set. An atomic fix may update every affected range of a
+selected violation, such as both names of a matching opening and closing tag.
+
 ## License
 
 Apache 2.0

@@ -409,16 +409,18 @@ Options:
   --no-colors           Disable ANSI color output.
   --diff[=<file>]       Restrict analysis to files changed in a unified diff.
                         Omit the value or pass "-" to read the diff from stdin.
-                        Violations are only reported when the violating element
-                        is on or contains a changed line (parent-context aware).
+                        Violations are reported when their source range
+                        intersects a changed line.
   --fix                 Automatically fixes violations when related the fixers
                         exist (experimental).
-  --strict              Extends the runner scope to files of entities referenced 
-                        in targeted files.
+  --strict              Limit scanning to the selected paths or diff files;
+                        do not add referenced entity target files.
 
 Arguments:
   <file-or-directory>   One or more files or directories to scan.
                         If omitted, the paths from the config file are used.
+                        Referenced entity targets are included unless --strict
+                        is set.
 
 Examples:
   docbook-cs

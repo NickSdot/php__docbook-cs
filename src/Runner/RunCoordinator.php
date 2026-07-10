@@ -37,33 +37,33 @@ final class RunCoordinator
 
         $matcher = new PathMatcher($config->getBasePath(), $config->getExcludePatterns());
 
-        $entities = new EntityResolver(
+        $entityResolver = new EntityResolver(
             $config->getProjectRoots(),
             $config->getEntityPaths(),
-        )->resolve();
+        );
+        $entities = $entityResolver->resolve();
 
         $includePaths = $options->overridePaths ?? $config->getIncludePaths();
 
         $files = new PathLoader($includePaths, $matcher)->loadPaths();
 
-        if (null !== $diffLines = $options->diffLines) {
-            $files = $this->filterByDiff($files, array_keys($diffLines));
-        }
+        $targets = new RunScopeResolver($matcher, $entityResolver->paths())->resolve(
+            $files,
+            $options->diffLines,
+            $options->strict,
+        );
 
         $report = new Report();
         $preprocessor = new EntityPreprocessor($entities);
         $processor = new XmlFileProcessor($sniffs, $preprocessor, $report);
 
-        $total = count($files);
+        $total = count($targets);
 
         $this->progress->start($total);
 
-        foreach ($files as $index => $file) {
+        $index = 0;
+        foreach ($targets as $file => $changedLines) {
             $report->incrementFilesScanned();
-
-            $changedLines = $diffLines !== null
-                ? $this->getChangedLinesForFile($file, $diffLines)
-                : null;
 
             $fileReport = $processor->processFile(
                 $file,
@@ -76,7 +76,7 @@ final class RunCoordinator
                 $report->addFileReport($fileReport);
             }
 
-            $this->progress->advance($index + 1, $file, $violationCount);
+            $this->progress->advance(++$index, $file, $violationCount);
         }
 
         $this->progress->finish();
@@ -123,61 +123,5 @@ final class RunCoordinator
         }
 
         return $sniffs;
-    }
-
-    /**
-     * @param list<string> $files
-     * @param list<string> $diffPaths
-     * @return list<string>
-     */
-    private function filterByDiff(array $files, array $diffPaths): array
-    {
-        return array_values(
-            array_filter(
-                $files,
-                fn(string $file) => $this->matchesDiffPath($file, $diffPaths),
-            )
-        );
-    }
-
-    /** @param list<string> $diffPaths */
-    private function matchesDiffPath(string $absolutePath, array $diffPaths): bool
-    {
-        $normalized = str_replace('\\', '/', $absolutePath);
-
-        foreach ($diffPaths as $diffPath) {
-            $normalizedDiff = str_replace('\\', '/', $diffPath);
-
-            if (
-                $normalized === $normalizedDiff
-                || str_ends_with($normalized, '/' . ltrim($normalizedDiff, '/'))
-            ) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * @param array<string, list<int>> $diffLines
-     * @return list<int>
-     */
-    private function getChangedLinesForFile(string $absolutePath, array $diffLines): array
-    {
-        $normalized = str_replace('\\', '/', $absolutePath);
-
-        foreach ($diffLines as $diffPath => $lines) {
-            $normalizedDiff = str_replace('\\', '/', $diffPath);
-
-            if (
-                $normalized === $normalizedDiff
-                || str_ends_with($normalized, '/' . ltrim($normalizedDiff, '/'))
-            ) {
-                return $lines;
-            }
-        }
-
-        return []; // @codeCoverageIgnore
     }
 }
