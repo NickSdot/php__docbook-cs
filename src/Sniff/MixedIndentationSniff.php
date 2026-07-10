@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace DocbookCS\Sniff;
 
-use DocbookCS\Fix\Fixer\MixedIndentationFixer;
 use DocbookCS\Source\SourceLines;
 
-final class MixedIndentationSniff extends AbstractSniff implements Fixable
+final class MixedIndentationSniff extends AbstractSniff
 {
     private const string INDENTATION_PATTERN = '/^[ \t]+/';
     private const string MESSAGE = 'Mixed tabs and spaces in indentation.';
@@ -15,11 +14,6 @@ final class MixedIndentationSniff extends AbstractSniff implements Fixable
     public static function getCode(): string
     {
         return 'DocbookCS.MixedIndentation';
-    }
-
-    public static function fixerClassName(): string
-    {
-        return MixedIndentationFixer::class;
     }
 
     /** @throws \LogicException if an invalid severity level is configured */

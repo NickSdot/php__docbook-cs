@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace DocbookCS\Sniff;
 
-use DocbookCS\Fix\Fixer\TrailingWhitespaceFixer;
 use DocbookCS\Source\SourceLines;
 
-final class TrailingWhitespaceSniff extends AbstractSniff implements Fixable
+final class TrailingWhitespaceSniff extends AbstractSniff
 {
     private const string TRAILING_WHITESPACE_PATTERN = '/[ \t]+$/';
     private const string MESSAGE = 'Trailing whitespace detected.';
@@ -15,11 +14,6 @@ final class TrailingWhitespaceSniff extends AbstractSniff implements Fixable
     public static function getCode(): string
     {
         return 'DocbookCS.TrailingWhitespace';
-    }
-
-    public static function fixerClassName(): string
-    {
-        return TrailingWhitespaceFixer::class;
     }
 
     /** @throws \LogicException if an invalid severity level is configured */

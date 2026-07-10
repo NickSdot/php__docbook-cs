@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace DocbookCS\Sniff;
 
-use DocbookCS\Fix\Fixer\AttributeOrderFixer;
-
 /**
  * Ensures that when an element has both xml:id and xmlns (or xmlns:*)
  * attributes, xml:id appears first.
@@ -13,7 +11,7 @@ use DocbookCS\Fix\Fixer\AttributeOrderFixer;
  * This is a stylistic convention in the PHP documentation project:
  * identity attributes should precede namespace declarations.
  */
-final class AttributeOrderSniff extends AbstractSniff implements Fixable
+final class AttributeOrderSniff extends AbstractSniff
 {
     private const string OPENING_TAG_PATTERN = '/<([a-zA-Z0-9:_-]+)\b([^<>]*?)>/';
     private const string ATTRIBUTE_NAME_PATTERN = '/([a-zA-Z0-9:_-]+)\s*=/';
@@ -21,11 +19,6 @@ final class AttributeOrderSniff extends AbstractSniff implements Fixable
     public static function getCode(): string
     {
         return 'DocbookCS.AttributeOrder';
-    }
-
-    public static function fixerClassName(): string
-    {
-        return AttributeOrderFixer::class;
     }
 
     /** @throws \LogicException if an invalid severity level is configured */

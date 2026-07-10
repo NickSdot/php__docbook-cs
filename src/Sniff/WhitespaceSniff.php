@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace DocbookCS\Sniff;
 
-use DocbookCS\Fix\Fixer\WhitespaceFixer;
-
 /**
  * Backward-compatible aggregate of the focused whitespace rules.
  * New configurations should use TrailingWhitespaceSniff and MixedIndentationSniff.
  */
-final class WhitespaceSniff extends AbstractSniff implements Fixable
+final class WhitespaceSniff extends AbstractSniff
 {
     private const string LINE_ENDING_PATTERN = '/(\r\n|\n|\r)/';
     private const string WHITESPACE_PATTERN = '/([ \t]+$)|^(\t* +\t+|\t+ +\t*)|^( +)\t/';
@@ -18,11 +16,6 @@ final class WhitespaceSniff extends AbstractSniff implements Fixable
     public static function getCode(): string
     {
         return 'DocbookCS.Whitespace';
-    }
-
-    public static function fixerClassName(): string
-    {
-        return WhitespaceFixer::class;
     }
 
     /** @throws \LogicException if an invalid severity level is configured */
