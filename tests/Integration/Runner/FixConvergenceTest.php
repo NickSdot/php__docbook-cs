@@ -126,6 +126,79 @@ final class FixConvergenceTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsChangedLineScopeAlignedAfterFixes(): void
+    {
+        $source = "<root>\n<line-break/><bad/>\n</root>";
+        $filePath = $this->temporaryFile($source);
+
+        try {
+            $lineBreakSniff = new class (RunMode::Fix) extends AbstractSniff implements Fixable {
+                public static function getCode(): string
+                {
+                    return 'Test.ScopedLineBreak';
+                }
+
+                public static function fixerClassName(): string
+                {
+                    return LineBreakFixer::class;
+                }
+
+                public function process(\DOMDocument $document, string $content, string $filePath): array
+                {
+                    $element = '<line-break/>';
+                    $offset = strpos($content, $element);
+                    if ($offset === false) {
+                        return [];
+                    }
+
+                    return [$this->createViolation(
+                        $filePath,
+                        2,
+                        $offset,
+                        $offset + strlen($element),
+                        'Replace the line-break marker.',
+                        $element,
+                    )];
+                }
+            };
+            $badElementSniff = new class (RunMode::Fix) extends AbstractSniff {
+                public static function getCode(): string
+                {
+                    return 'Test.ScopedBadElement';
+                }
+
+                public function process(\DOMDocument $document, string $content, string $filePath): array
+                {
+                    $element = $document->getElementsByTagName('bad')->item(0);
+                    $offset = strpos($content, '<bad/>');
+
+                    if (!$element instanceof \DOMElement || $offset === false) {
+                        return [];
+                    }
+
+                    return [$this->createViolation(
+                        $filePath,
+                        $element->getLineNo(),
+                        $offset,
+                        $offset + strlen('<bad/>'),
+                        'Bad element.',
+                        '<bad/>',
+                    )];
+                }
+            };
+            $processor = new XmlFileProcessor([$lineBreakSniff, $badElementSniff]);
+
+            $report = $processor->processFile($filePath, [2]);
+
+            self::assertSame("<root>\n\n<bad/>\n</root>", file_get_contents($filePath));
+            self::assertSame(1, $report->getViolationCount());
+            self::assertSame(3, $report->getViolations()[0]->line);
+        } finally {
+            @unlink($filePath);
+        }
+    }
+
+    #[Test]
     public function itDoesNotPersistFixesThatCycle(): void
     {
         $source = '<root><alpha/></root>';

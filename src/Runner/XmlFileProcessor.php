@@ -101,6 +101,9 @@ final readonly class XmlFileProcessor
         $applied = 0;
         $skipped = 0;
         $fixPasses = 0;
+        $scope = $changedLines !== null
+            ? SourceScope::changedLines($sourceContent, $changedLines)
+            : SourceScope::wholeFile();
 
         while (true) {
             $passReport = new FileReport($filePath);
@@ -120,6 +123,7 @@ final readonly class XmlFileProcessor
                 $sourceContent,
                 $filePath,
                 $passReport,
+                $scope,
                 $changedLines,
             );
 
@@ -147,6 +151,7 @@ final readonly class XmlFileProcessor
             }
 
             $seenContentHashes[$fixedContentHash] = true;
+            $scope = $scope->after($fixResult->appliedFixes);
             $sourceContent = $fixResult->content;
         }
 
@@ -170,6 +175,7 @@ final readonly class XmlFileProcessor
         string $sourceContent,
         string $filePath,
         FileReport $fileReport,
+        SourceScope $scope,
         ?array $changedLines,
     ): array {
         $fixes = [];
@@ -182,7 +188,12 @@ final readonly class XmlFileProcessor
             $this->report->addSniffTime($sniff::getCode(), microtime(true) - $start);
 
             $relevantViolations = $changedLines !== null
-                ? $this->filterRelevantViolations($sniffViolations, $document, $changedLines)
+                ? $this->filterRelevantViolations(
+                    $sniffViolations,
+                    $document,
+                    $scope,
+                    $changedLines,
+                )
                 : $sniffViolations;
 
             $fileReport->addViolations($relevantViolations);
@@ -258,14 +269,23 @@ final readonly class XmlFileProcessor
      * @param list<int> $changedLines
      * @return list<Violation>
      */
-    private function filterRelevantViolations(array $violations, \DOMDocument $document, array $changedLines): array
-    {
+    private function filterRelevantViolations(
+        array $violations,
+        \DOMDocument $document,
+        SourceScope $scope,
+        array $changedLines,
+    ): array {
         /** @var array<int, int> $changedSet */
         $changedSet = array_flip($changedLines);
 
         return array_values(array_filter(
             $violations,
-            fn(Violation $v) => $this->isViolationRelevant($v, $document, $changedLines, $changedSet),
+            fn(Violation $violation) => $scope->includes($violation)
+                || (
+                    $violation->content === null
+                    && $violation->beginOffset === $violation->untilOffset
+                    && $this->isViolationRelevant($violation, $document, $changedLines, $changedSet)
+                ),
         ));
     }
 

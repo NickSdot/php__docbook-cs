@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DocbookCS\Sniff;
+namespace DocbookCS\Source;
 
 final class SourceLines
 {
@@ -11,7 +11,8 @@ final class SourceLines
      *     line: int,
      *     content: string,
      *     beginOffset: int,
-     *     untilOffset: int
+     *     untilOffset: int,
+     *     endOffset: int
      * }>
      */
     public static function from(string $source): \Generator
@@ -24,21 +25,25 @@ final class SourceLines
             $lineLength = strcspn($source, "\r\n", $beginOffset);
             $untilOffset = $beginOffset + $lineLength;
 
+            $lineEndingLength = 0;
+            if ($untilOffset < $sourceLength) {
+                $lineEndingLength = $source[$untilOffset] === "\r"
+                    && ($source[$untilOffset + 1] ?? null) === "\n"
+                        ? 2
+                        : 1;
+            }
+
             yield [
                 'line' => $line,
                 'content' => substr($source, $beginOffset, $lineLength),
                 'beginOffset' => $beginOffset,
                 'untilOffset' => $untilOffset,
+                'endOffset' => $untilOffset + $lineEndingLength,
             ];
 
             if ($untilOffset === $sourceLength) {
                 return;
             }
-
-            $lineEndingLength = $source[$untilOffset] === "\r"
-                && ($source[$untilOffset + 1] ?? null) === "\n"
-                    ? 2
-                    : 1;
 
             $beginOffset = $untilOffset + $lineEndingLength;
             $line++;

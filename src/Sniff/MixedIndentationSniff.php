@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DocbookCS\Sniff;
 
 use DocbookCS\Fix\Fixer\MixedIndentationFixer;
+use DocbookCS\Source\SourceLines;
 
 final class MixedIndentationSniff extends AbstractSniff implements Fixable
 {

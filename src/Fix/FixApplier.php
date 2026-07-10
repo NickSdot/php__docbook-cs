@@ -69,6 +69,7 @@ final class FixApplier
             content: $content,
             applied: $acceptedPlans,
             skipped: $skipped,
+            appliedFixes: $acceptedFixes,
         );
     }
 

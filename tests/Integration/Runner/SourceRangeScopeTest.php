@@ -1,0 +1,54 @@
+<?php
+
+declare(strict_types=1);
+
+namespace DocbookCS\Tests\Integration\Runner;
+
+use DocbookCS\Runner\RunMode;
+use DocbookCS\Runner\SourceScope;
+use DocbookCS\Runner\XmlFileProcessor;
+use DocbookCS\Sniff\SimparaSniff;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+
+#[CoversClass(SimparaSniff::class)]
+#[CoversClass(SourceScope::class)]
+#[CoversClass(XmlFileProcessor::class)]
+final class SourceRangeScopeTest extends TestCase
+{
+    #[Test]
+    public function itAppliesEveryRangeOfAViolationIntersectingAChangedLine(): void
+    {
+        $source = <<<'XML'
+<root>
+<para>
+Text
+</para>
+</root>
+XML;
+        $expected = <<<'XML'
+<root>
+<simpara>
+Text
+</simpara>
+</root>
+XML;
+        $filePath = tempnam(sys_get_temp_dir(), 'docbook-cs-');
+        self::assertIsString($filePath);
+        file_put_contents($filePath, $source);
+
+        try {
+            $processor = new XmlFileProcessor([
+                new SimparaSniff(RunMode::Fix),
+            ]);
+
+            $report = $processor->processFile($filePath, [3]);
+
+            self::assertSame($expected, file_get_contents($filePath));
+            self::assertFalse($report->hasViolations());
+        } finally {
+            @unlink($filePath);
+        }
+    }
+}

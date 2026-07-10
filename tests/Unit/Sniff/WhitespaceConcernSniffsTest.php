@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace DocbookCS\Tests\Unit\Sniff;
 
 use DocbookCS\Sniff\MixedIndentationSniff;
-use DocbookCS\Sniff\SourceLines;
+use DocbookCS\Source\SourceLines;
 use DocbookCS\Sniff\TrailingWhitespaceSniff;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;

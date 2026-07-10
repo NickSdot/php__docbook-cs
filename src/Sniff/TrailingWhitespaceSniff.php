@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DocbookCS\Sniff;
 
 use DocbookCS\Fix\Fixer\TrailingWhitespaceFixer;
+use DocbookCS\Source\SourceLines;
 
 final class TrailingWhitespaceSniff extends AbstractSniff implements Fixable
 {
