@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace DocbookCS\Tests\Integration\Runner;
 
 use DocbookCS\Config\ConfigData;
+use DocbookCS\Config\SniffEntry;
 use DocbookCS\Path\EntityResolver;
 use DocbookCS\Path\PathLoader;
 use DocbookCS\Path\PathMatcher;
 use DocbookCS\Runner\RunCoordinator;
+use DocbookCS\Runner\RunMode;
 use DocbookCS\Runner\RunOptions;
 use DocbookCS\Runner\RunScopeResolver;
+use DocbookCS\Sniff\SimparaSniff;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -61,11 +64,27 @@ final class RunScopeTest extends TestCase
         );
     }
 
-    private function config(): ConfigData
+    #[Test]
+    public function itFixesExpandedXmlInItsTargetFileOnly(): void
+    {
+        file_put_contents($this->targetFile, '<para>Text</para>');
+        $config = $this->config([
+            new SniffEntry(SimparaSniff::class),
+        ]);
+
+        $report = new RunCoordinator()->run($config, new RunOptions(mode: RunMode::Fix));
+
+        self::assertSame('<root>&target;</root>', file_get_contents($this->sourceFile));
+        self::assertSame('<simpara>Text</simpara>', file_get_contents($this->targetFile));
+        self::assertFalse($report->hasViolations());
+    }
+
+    /** @param list<SniffEntry> $sniffs */
+    private function config(array $sniffs = []): ConfigData
     {
         return new ConfigData(
             projectRoots: [],
-            sniffs: [],
+            sniffs: $sniffs,
             includePaths: [$this->sourceFile],
             excludePatterns: [],
             entityPaths: [$this->entityFile],

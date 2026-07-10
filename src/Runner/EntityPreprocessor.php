@@ -25,7 +25,14 @@ final class EntityPreprocessor
         return $this->expandEntities($xml);
     }
 
-    private function expandEntities(string $content): string
+    public function processForParsing(string $xml): string
+    {
+        $xml = $this->stripDoctype($xml);
+
+        return $this->expandEntities($xml, markXmlExpansions: true);
+    }
+
+    private function expandEntities(string $content, bool $markXmlExpansions = false): string
     {
         $maxDepth = 20;
 
@@ -33,10 +40,20 @@ final class EntityPreprocessor
             $changed = false;
 
             $content = preg_replace_callback(
-                '/<!--[\s\S]*?-->|' . self::ENTITY_PATTERN . '/',
-                function (array $matches) use (&$changed): string {
-                    // If this is a comment, return as is
+                '/<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<\?[\s\S]*?\?>|' . self::ENTITY_PATTERN . '/',
+                function (array $matches) use (&$changed, $markXmlExpansions): string {
+                    // Entity-like text inside comments is literal.
                     if (str_starts_with($matches[0], '<!--')) {
+                        return $matches[0];
+                    }
+
+                    // Entity-like text inside CDATA is literal.
+                    if (str_starts_with($matches[0], '<![CDATA[')) {
+                        return $matches[0];
+                    }
+
+                    // Entity-like text inside processing instructions is literal.
+                    if (str_starts_with($matches[0], '<?')) {
                         return $matches[0];
                     }
 
@@ -51,9 +68,11 @@ final class EntityPreprocessor
 
                     $changed = true;
 
-                    $value = $this->entities[$name];
+                    $value = $this->stripXmlDeclaration($this->entities[$name]);
 
-                    return $this->stripXmlDeclaration($value);
+                    return $markXmlExpansions && $this->containsXmlElement($value)
+                        ? EntityExpansionMarker::wrap($value)
+                        : $value;
                 },
                 $content,
             ) ?: $content;
@@ -64,6 +83,11 @@ final class EntityPreprocessor
         }
 
         return $content;
+    }
+
+    private function containsXmlElement(string $content): bool
+    {
+        return preg_match('/<\s*[a-zA-Z_][\w:.-]*(?:\s|\/?>)/', $content) === 1;
     }
 
     private function stripDoctype(string $xmlContent): string

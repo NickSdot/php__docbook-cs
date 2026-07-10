@@ -111,7 +111,7 @@ final readonly class XmlFileProcessor
 
         while (true) {
             $passReport = new FileReport($filePath);
-            $processedContent = $this->preprocessor->process($sourceContent);
+            $processedContent = $this->preprocessor->processForParsing($sourceContent);
 
             $document = $this->parseXml($processedContent, $filePath, $passReport);
             if ($document === null) {

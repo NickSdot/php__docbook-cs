@@ -50,6 +50,10 @@ final class ExceptionNameSniff extends AbstractSniff
 
         /** @var \DOMElement $node */
         foreach ($classnames as $node) {
+            if (!$this->isSourceBacked($node)) {
+                continue;
+            }
+
             $text = trim($node->textContent);
             $match = $sourceMatches[$sourceMatchIndex] ?? null;
             $sourceMatchIndex++;
@@ -72,7 +76,7 @@ final class ExceptionNameSniff extends AbstractSniff
 
             $violations[] = $this->createViolation(
                 $filePath,
-                $node->getLineNo(),
+                $match['affectedRanges'][0]->line,
                 $match['beginOffset'],
                 $match['untilOffset'],
                 sprintf(

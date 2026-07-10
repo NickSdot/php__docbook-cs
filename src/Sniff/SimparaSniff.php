@@ -123,11 +123,19 @@ final class SimparaSniff extends AbstractSniff
 
         /** @var \DOMElement $para */
         foreach ($paras as $para) {
+            if (!$this->isSourceBacked($para)) {
+                continue;
+            }
+
             $match = $sourceMatches[$sourceMatchIndex] ?? null;
             $sourceMatchIndex++;
 
             if ($match === null) {
                 throw new \LogicException('Could not map simpara violation to source content.');
+            }
+
+            if ($match['selfClosing']) {
+                continue;
             }
 
             $parent = $para->parentNode;
@@ -144,7 +152,7 @@ final class SimparaSniff extends AbstractSniff
 
             $violations[] = $this->createViolation(
                 $filePath,
-                $para->getLineNo(),
+                $match['affectedRanges'][0]->line,
                 $match['beginOffset'],
                 $match['untilOffset'],
                 self::MESSAGE,
@@ -196,6 +204,7 @@ final class SimparaSniff extends AbstractSniff
      *     beginOffset: int,
      *     untilOffset: int,
      *     content: string,
+     *     selfClosing: bool,
      *     affectedRanges: non-empty-list<SourceRange>
      * }>
      */
@@ -209,6 +218,21 @@ final class SimparaSniff extends AbstractSniff
 
         foreach ($matches[0] as [$tag, $offset]) {
             $offset = (int) $offset;
+
+            if (str_ends_with(rtrim($tag), '/>')) {
+                $sourceMatches[] = [
+                    'beginOffset' => $offset,
+                    'untilOffset' => $offset + strlen($tag),
+                    'content' => $tag,
+                    'selfClosing' => true,
+                    'affectedRanges' => [new SourceRange(
+                        $this->lineFromOffset($content, $offset),
+                        $offset + 1,
+                        $offset + 1 + strlen(self::ELEMENT_NAME),
+                    )],
+                ];
+                continue;
+            }
 
             if (!str_starts_with($tag, '</')) {
                 $stack[] = [
@@ -232,6 +256,7 @@ final class SimparaSniff extends AbstractSniff
                 'beginOffset' => $start,
                 'untilOffset' => $untilOffset,
                 'content' => substr($content, $start, $untilOffset - $start),
+                'selfClosing' => false,
                 'affectedRanges' => [
                     $opening['range'],
                     new SourceRange(

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DocbookCS\Sniff;
 
+use DocbookCS\Runner\EntityExpansionMarker;
 use DocbookCS\Runner\RunMode;
 use DocbookCS\Violation\Severity;
 use DocbookCS\Violation\SourceRange;
@@ -27,6 +28,11 @@ abstract class AbstractSniff implements SniffInterface
     protected function getProperty(string $name, string $default = ''): string
     {
         return $this->properties[$name] ?? $default;
+    }
+
+    protected function isSourceBacked(\DOMNode $node): bool
+    {
+        return !EntityExpansionMarker::contains($node);
     }
 
     /**
