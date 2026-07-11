@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace DocbookCS\Sniff;
 
+use DocbookCS\Fix\Fixer\SimparaFixer;
 use DocbookCS\Violation\SourceRange;
 
-final class SimparaSniff extends AbstractSniff
+final class SimparaSniff extends AbstractSniff implements Fixable
 {
     private const string ELEMENT_NAME = 'para';
     private const string MESSAGE = '<para> contains only inline content and should be <simpara>.';
@@ -105,6 +106,11 @@ final class SimparaSniff extends AbstractSniff
     public static function getCode(): string
     {
         return 'DocbookCS.Simpara';
+    }
+
+    public static function fixerClassName(): string
+    {
+        return SimparaFixer::class;
     }
 
     /** @throws \LogicException if an invalid severity level is configured */

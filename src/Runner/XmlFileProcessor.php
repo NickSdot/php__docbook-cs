@@ -9,9 +9,9 @@ use DocbookCS\Fix\FixApplier;
 use DocbookCS\Fix\FixPlan;
 use DocbookCS\Fix\FixResult;
 use DocbookCS\Fix\FixerException;
-use DocbookCS\Fix\FixerRegistry;
 use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
+use DocbookCS\Sniff\Fixable;
 use DocbookCS\Sniff\SniffInterface;
 use DocbookCS\Violation\Severity;
 use DocbookCS\Violation\Violation;
@@ -27,19 +27,15 @@ final readonly class XmlFileProcessor
 
     private Report $report;
 
-    private FixerRegistry $fixerRegistry;
-
     /** @param list<SniffInterface> $sniffs */
     public function __construct(
         array $sniffs,
         ?EntityPreprocessor $preprocessor = null,
         ?Report $report = null,
-        ?FixerRegistry $fixerRegistry = null,
     ) {
         $this->sniffs = $sniffs;
         $this->preprocessor = $preprocessor ?? new EntityPreprocessor([]);
         $this->report = $report ?? new Report();
-        $this->fixerRegistry = $fixerRegistry ?? FixerRegistry::defaults();
     }
 
     /**
@@ -202,16 +198,11 @@ final readonly class XmlFileProcessor
 
             $fileReport->addViolations($relevantViolations);
 
-            if (!$sniff->mode->isFixMode()) {
+            if (!$sniff->mode->isFixMode() || !$sniff instanceof Fixable) {
                 continue;
             }
 
-            $fixerClass = $this->fixerRegistry->fixerClassFor($sniff);
-            if ($fixerClass === null) {
-                continue;
-            }
-
-            $fixer = new $fixerClass();
+            $fixer = new ($sniff::fixerClassName());
 
             foreach ($relevantViolations as $violation) {
                 $fixes[] = $fixer->process($violation);

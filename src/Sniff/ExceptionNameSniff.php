@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DocbookCS\Sniff;
 
+use DocbookCS\Fix\Fixer\ExceptionNameFixer;
 use DocbookCS\Violation\SourceRange;
 
 /**
@@ -14,7 +15,7 @@ use DocbookCS\Violation\SourceRange;
  * exception." When a <classname> element's text content matches a
  * known exception/error pattern, this sniff flags it.
  */
-final class ExceptionNameSniff extends AbstractSniff
+final class ExceptionNameSniff extends AbstractSniff implements Fixable
 {
     private const string ELEMENT_NAME = 'classname';
 
@@ -33,6 +34,11 @@ final class ExceptionNameSniff extends AbstractSniff
     public static function getCode(): string
     {
         return 'DocbookCS.ExceptionName';
+    }
+
+    public static function fixerClassName(): string
+    {
+        return ExceptionNameFixer::class;
     }
 
     /** @throws \LogicException */
