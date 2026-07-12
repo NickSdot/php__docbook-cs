@@ -12,12 +12,9 @@ final class FileReport
     /** @var list<Violation> */
     private array $violations = [];
 
-    public readonly string $filePath;
-
-    public function __construct(string $filePath)
-    {
-        $this->filePath = $this->makeRelative($filePath);
-    }
+    public function __construct(
+        public readonly string $filePath,
+    ) {}
 
     public function addViolation(Violation $violation): void
     {
@@ -62,22 +59,5 @@ final class FileReport
             $this->violations,
             static fn(Violation $v): bool => $v->severity === Severity::WARNING,
         ) |> count(...);
-    }
-
-    private function makeRelative(string $filePath): string
-    {
-        $cwd = getcwd();
-        if ($cwd === false) {
-            return $filePath; // @codeCoverageIgnore
-        }
-
-        $prefix = rtrim(str_replace('\\', '/', $cwd), '/') . '/';
-        $normalized = str_replace('\\', '/', $filePath);
-
-        if (str_starts_with($normalized, $prefix)) {
-            return substr($normalized, strlen($prefix));
-        }
-
-        return $filePath;
     }
 }
