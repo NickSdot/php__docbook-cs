@@ -9,6 +9,7 @@ use DocbookCS\Fix\Fixer\AttributeOrderFixer;
 use DocbookCS\Fix\FixerException;
 use DocbookCS\Report\FileReport;
 use DocbookCS\Runner\RunMode;
+use DocbookCS\Runner\ViolationScopeFilter;
 use DocbookCS\Runner\XmlFileProcessor;
 use DocbookCS\Sniff\AbstractSniff;
 use DocbookCS\Sniff\ExceptionNameSniff;
@@ -19,9 +20,11 @@ use DocbookCS\Tests\Support\Fix\LineBreakFixer;
 use DocbookCS\Tests\Support\Fix\ToggleElementFixer;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(XmlFileProcessor::class)]
+#[UsesClass(ViolationScopeFilter::class)]
 final class FixConvergenceTest extends TestCase
 {
     #[Test]

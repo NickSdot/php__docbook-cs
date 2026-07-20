@@ -23,10 +23,12 @@ use DocbookCS\Runner\EntityPreprocessor;
 use DocbookCS\Runner\RunMode;
 use DocbookCS\Runner\RunOptions;
 use DocbookCS\Runner\RunCoordinator;
+use DocbookCS\Runner\ViolationScopeFilter;
 use DocbookCS\Runner\XmlFileProcessor;
 use DocbookCS\Sniff\ExceptionNameSniff;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(Application::class)]
@@ -50,6 +52,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(FileReport::class)]
 #[CoversClass(ExceptionNameSniff::class)]
 #[CoversClass(EntityResolver::class)]
+#[UsesClass(ViolationScopeFilter::class)]
 final class ApplicationTest extends TestCase
 {
     private const string FIXTURE_DIR = __DIR__ . '/../fixtures/application';

@@ -28,6 +28,8 @@ final readonly class XmlFileProcessor
 
     private Report $report;
 
+    private ViolationScopeFilter $violationScopeFilter;
+
     /** @param list<SniffInterface> $sniffs */
     public function __construct(
         array $sniffs,
@@ -37,6 +39,7 @@ final readonly class XmlFileProcessor
         $this->sniffs = $sniffs;
         $this->preprocessor = $preprocessor ?? new EntityPreprocessor([]);
         $this->report = $report ?? new Report();
+        $this->violationScopeFilter = new ViolationScopeFilter();
     }
 
     /** @throws FixerException */
@@ -115,9 +118,6 @@ final readonly class XmlFileProcessor
         SourceScope $scope,
     ): array {
         $fixes = [];
-        $changedLines = $scope->isWholeFile()
-            ? null
-            : $scope->lineNumbers($file);
 
         foreach ($this->sniffs as $sniff) {
             $start = microtime(true);
@@ -126,14 +126,12 @@ final readonly class XmlFileProcessor
 
             $this->report->addSniffTime($sniff::getCode(), microtime(true) - $start);
 
-            $relevantViolations = $changedLines !== null
-                ? $this->filterRelevantViolations(
-                    $sniffViolations,
-                    $document,
-                    $scope,
-                    $changedLines,
-                )
-                : $sniffViolations;
+            $relevantViolations = $this->violationScopeFilter->filter(
+                $sniffViolations,
+                $document,
+                $file,
+                $scope,
+            );
 
             $fileReport->addViolations($relevantViolations);
 
@@ -185,133 +183,5 @@ final readonly class XmlFileProcessor
         }
 
         return $document;
-    }
-
-    /**
-     * @param list<Violation> $violations
-     * @param list<int> $changedLines
-     * @return list<Violation>
-     */
-    private function filterRelevantViolations(
-        array $violations,
-        \DOMDocument $document,
-        SourceScope $scope,
-        array $changedLines,
-    ): array {
-        /** @var array<int, int> $changedSet */
-        $changedSet = array_flip($changedLines);
-
-        return array_values(array_filter(
-            $violations,
-            fn(Violation $violation) => $scope->includes($violation)
-                || (
-                    $violation->content === null
-                    && $violation->beginOffset === $violation->untilOffset
-                    && $this->isViolationRelevant($violation, $document, $changedLines, $changedSet)
-                ),
-        ));
-    }
-
-    /**
-     * @param list<int> $changedLines
-     * @param array<int, int> $changedSet
-     */
-    private function isViolationRelevant(
-        Violation $violation,
-        \DOMDocument $document,
-        array $changedLines,
-        array $changedSet,
-    ): bool {
-        if (isset($changedSet[$violation->line])) {
-            return true;
-        }
-
-        $violationElement = $this->firstElementOnLine($document, $violation->line);
-        if ($violationElement === null) {
-            return false;
-        }
-
-        $endLine = $this->computeElementEndLine($violationElement);
-
-        foreach ($changedLines as $changed) {
-            $owner = $this->innermostContaining($violationElement, $changed, $endLine);
-            if ($owner === $violationElement) {
-                return true;
-            }
-
-            if ($owner !== null && $owner->parentNode === $violationElement) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function firstElementOnLine(\DOMDocument $document, int $line): ?\DOMElement
-    {
-        foreach ($document->getElementsByTagName('*') as $element) {
-            if ($element->getLineNo() === $line) {
-                return $element;
-            }
-        }
-
-        return null;
-    }
-
-    private function innermostContaining(\DOMElement $element, int $line, int $endLine): ?\DOMElement
-    {
-        if ($line > $endLine || $line < $element->getLineNo()) {
-            return null;
-        }
-
-        $children = [];
-        foreach ($element->childNodes as $child) {
-            if ($child instanceof \DOMElement) {
-                $children[] = $child;
-            }
-        }
-
-        $count = count($children);
-        foreach ($children as $i => $iValue) {
-            $child = $iValue;
-
-            $childEnd = $endLine;
-            for ($j = $i + 1; $j < $count; $j++) {
-                $nextLine = $children[$j]->getLineNo();
-                if ($nextLine > $child->getLineNo()) {
-                    $childEnd = $nextLine - 1;
-                    break;
-                }
-            }
-            $childEnd = min($childEnd, $this->computeElementEndLine($child));
-
-            $deeper = $this->innermostContaining($child, $line, $childEnd);
-            if ($deeper !== null) {
-                return $deeper;
-            }
-        }
-
-        return $element;
-    }
-
-    private function computeElementEndLine(\DOMElement $element): int
-    {
-        $max = $element->getLineNo();
-
-        foreach ($element->childNodes as $child) {
-            $line = $child->getLineNo();
-            if ($line > $max) {
-                $max = $line;
-            }
-
-            if ($child instanceof \DOMElement) {
-                $childEnd = $this->computeElementEndLine($child);
-                if ($childEnd > $max) {
-                    $max = $childEnd;
-                }
-            }
-        }
-
-        return $max;
     }
 }

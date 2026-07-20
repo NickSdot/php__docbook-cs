@@ -11,6 +11,7 @@ use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
 use DocbookCS\Runner\EntityPreprocessor;
 use DocbookCS\Runner\RunMode;
+use DocbookCS\Runner\ViolationScopeFilter;
 use DocbookCS\Runner\XmlFileProcessor;
 use DocbookCS\Sniff\AttributeOrderSniff;
 use DocbookCS\Sniff\Fixable;
@@ -26,6 +27,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(AttributeOrderSniff::class)]
 #[CoversClass(FileReport::class)]
 #[CoversClass(Violation::class)]
+#[CoversClass(ViolationScopeFilter::class)]
 #[CoversClass(XmlFileProcessor::class)]
 #[CoversClass(Report::class)]
 final class XmlFileProcessorTest extends TestCase

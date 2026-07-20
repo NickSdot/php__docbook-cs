@@ -7,16 +7,19 @@ namespace DocbookCS\Tests\Integration\Runner;
 use DocbookCS\Diff\FileChange;
 use DocbookCS\Runner\RunMode;
 use DocbookCS\Runner\SourceScope;
+use DocbookCS\Runner\ViolationScopeFilter;
 use DocbookCS\Runner\XmlFileProcessor;
 use DocbookCS\Sniff\SimparaSniff;
 use DocbookCS\Source\File;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(SimparaSniff::class)]
 #[CoversClass(SourceScope::class)]
 #[CoversClass(XmlFileProcessor::class)]
+#[UsesClass(ViolationScopeFilter::class)]
 final class SourceRangeScopeTest extends TestCase
 {
     #[Test]

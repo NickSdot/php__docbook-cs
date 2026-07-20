@@ -19,6 +19,7 @@ use DocbookCS\Runner\EntityPreprocessor;
 use DocbookCS\Runner\RunCoordinator;
 use DocbookCS\Runner\RunMode;
 use DocbookCS\Runner\RunOptions;
+use DocbookCS\Runner\ViolationScopeFilter;
 use DocbookCS\Runner\XmlFileProcessor;
 use DocbookCS\Sniff\SniffInterface;
 use DocbookCS\Source\File;
@@ -26,6 +27,7 @@ use DocbookCS\Violation\Severity;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(RunCoordinator::class)]
@@ -42,6 +44,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(SniffEntry::class)]
 #[CoversClass(FileReport::class)]
 #[CoversClass(Violation::class)]
+#[UsesClass(ViolationScopeFilter::class)]
 final class SniffRunnerTest extends TestCase
 {
     private const string FIXTURE_DIR = __DIR__ . '/../../fixtures/sniff_runner/default';
