@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DocbookCS\Tests\Unit\Sniff;
 
 use DocbookCS\Sniff\SimparaSniff;
+use DocbookCS\Source\File;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -29,7 +30,7 @@ final class SimparaSniffTest extends TestCase
             '<root><para>Text</para></root>'
         );
 
-        $violations = new SimparaSniff()->process($doc, $content, 'file.xml');
+        $violations = new SimparaSniff()->process($doc, new File('file.xml', $content));
 
         self::assertCount(1, $violations);
         self::assertSame('<para>Text</para>', $violations[0]->content);
@@ -44,7 +45,7 @@ final class SimparaSniffTest extends TestCase
             '<root><para>Text <emphasis>inline</emphasis></para></root>'
         );
 
-        self::assertCount(1, new SimparaSniff()->process($doc, $content, 'file.xml'));
+        self::assertCount(1, new SimparaSniff()->process($doc, new File('file.xml', $content)));
     }
 
     #[Test]
@@ -54,7 +55,7 @@ final class SimparaSniffTest extends TestCase
             '<root><para><itemizedlist/></para></root>'
         );
 
-        self::assertSame([], new SimparaSniff()->process($doc, $content, 'file.xml'));
+        self::assertSame([], new SimparaSniff()->process($doc, new File('file.xml', $content)));
     }
 
     #[Test]
@@ -70,7 +71,7 @@ final class SimparaSniffTest extends TestCase
             </root>'
         );
 
-        $violations = $sniff->process($doc, $content, 'file.xml');
+        $violations = $sniff->process($doc, new File('file.xml', $content));
 
         self::assertCount(2, $violations);
     }
@@ -85,7 +86,7 @@ final class SimparaSniffTest extends TestCase
             '<root><para><custom/></para></root>'
         );
 
-        self::assertCount(1, $sniff->process($doc, $content, 'file.xml'));
+        self::assertCount(1, $sniff->process($doc, new File('file.xml', $content)));
     }
 
     #[Test]
@@ -95,7 +96,7 @@ final class SimparaSniffTest extends TestCase
             '<root><para><custom/></para></root>'
         );
 
-        self::assertSame([], new SimparaSniff()->process($doc, $content, 'file.xml'));
+        self::assertSame([], new SimparaSniff()->process($doc, new File('file.xml', $content)));
     }
 
     #[Test]
@@ -107,7 +108,7 @@ final class SimparaSniffTest extends TestCase
             '</root>'
         );
 
-        $violations = new SimparaSniff()->process($doc, $content, 'file.xml');
+        $violations = new SimparaSniff()->process($doc, new File('file.xml', $content));
 
         self::assertSame(2, $violations[0]->line);
     }
@@ -124,7 +125,7 @@ final class SimparaSniffTest extends TestCase
             </root>'
         );
 
-        self::assertSame([], new SimparaSniff()->process($doc, $content, 'file.xml'));
+        self::assertSame([], new SimparaSniff()->process($doc, new File('file.xml', $content)));
     }
 
     #[Test]
@@ -139,7 +140,7 @@ final class SimparaSniffTest extends TestCase
             </root>'
         );
 
-        self::assertSame([], new SimparaSniff()->process($doc, $content, 'file.xml'));
+        self::assertSame([], new SimparaSniff()->process($doc, new File('file.xml', $content)));
     }
 
     #[Test]
@@ -155,7 +156,7 @@ final class SimparaSniffTest extends TestCase
             </root>'
         );
 
-        $violations = new SimparaSniff()->process($doc, $content, 'file.xml');
+        $violations = new SimparaSniff()->process($doc, new File('file.xml', $content));
 
         self::assertCount(1, $violations);
     }
@@ -172,6 +173,6 @@ final class SimparaSniffTest extends TestCase
             </root>'
         );
 
-        self::assertSame([], new SimparaSniff()->process($doc, $content, 'file.xml'));
+        self::assertSame([], new SimparaSniff()->process($doc, new File('file.xml', $content)));
     }
 }

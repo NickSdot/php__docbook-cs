@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace DocbookCS\Runner;
 
+use DocbookCS\Diff\FileChange;
 use DocbookCS\Fix\Fix;
 use DocbookCS\Fix\FixApplier;
 use DocbookCS\Fix\FixPlan;
-use DocbookCS\Fix\FixResult;
 use DocbookCS\Fix\FixerException;
 use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
 use DocbookCS\Sniff\Fixable;
 use DocbookCS\Sniff\SniffInterface;
+use DocbookCS\Source\File;
 use DocbookCS\Violation\Severity;
 use DocbookCS\Violation\Violation;
 
@@ -38,81 +39,24 @@ final readonly class XmlFileProcessor
         $this->report = $report ?? new Report();
     }
 
-    /**
-     * @param list<int>|null $changedLines
-     * @throws FixerException
-     */
-    public function processFile(string $filePath, ?array $changedLines = null): FileReport
+    /** @throws FixerException */
+    public function process(File $initialFile, ?FileChange $fileChange = null): XmlProcessingResult
     {
-        $fileReport = new FileReport($filePath);
-
-        $content = @file_get_contents($filePath);
-        if ($content === false) {
-            $fileReport->addViolation(new Violation(
-                sniffCode: 'DocbookCS.Internal',
-                filePath: $fileReport->filePath,
-                line: 0,
-                beginOffset: 0,
-                untilOffset: 0,
-                message: 'Could not read file.',
-                severity: Severity::ERROR,
-            ));
-            return $fileReport;
-        }
-
-        $result = $this->processContent($content, $fileReport->filePath, $fileReport, $changedLines);
-
-        if ($result->hasPendingFixesToPersist() && @file_put_contents($filePath, $result->fixedContent()) === false) {
-            throw FixerException::cannotPersist($filePath);
-        }
-
-        return $fileReport;
-    }
-
-    /**
-     * Testing Harvest
-     * @param list<int>|null $changedLines
-     * @throws FixerException
-     */
-    public function processString(
-        string $xmlContent,
-        string $pseudoPath = 'input.xml',
-        ?array $changedLines = null,
-    ): FileReport {
-        $fileReport = new FileReport($pseudoPath);
-
-        $this->processContent($xmlContent, $pseudoPath, $fileReport, $changedLines);
-
-        return $fileReport;
-    }
-
-    /**
-     * @param list<int>|null $changedLines
-     * @throws FixerException
-     */
-    private function processContent(
-        string $originalContent,
-        string $filePath,
-        FileReport $fileReport,
-        ?array $changedLines = null,
-    ): XmlProcessingResult {
-        $sourceContent = $originalContent;
-        $seenContentHashes = [hash('sha256', $sourceContent) => true];
-        $applied = 0;
-        $skipped = 0;
+        $fileReport = new FileReport($initialFile->path);
+        $currentFile = $initialFile;
+        $scope = $fileChange === null
+            ? SourceScope::wholeFile()
+            : SourceScope::changedLines($initialFile, $fileChange->lineNumbers);
+        $seenContentHashes = [hash('sha256', $currentFile->content) => true];
         $fixPasses = 0;
-        $scope = $changedLines !== null
-            ? SourceScope::changedLines($sourceContent, $changedLines)
-            : SourceScope::wholeFile();
 
         while (true) {
-            $passReport = new FileReport($filePath);
-            $processedContent = $this->preprocessor->processForParsing($sourceContent);
+            $passReport = new FileReport($currentFile->path);
 
-            $document = $this->parseXml($processedContent, $filePath, $passReport);
+            $document = $this->parseXml($currentFile, $passReport);
             if ($document === null) {
-                if ($sourceContent !== $originalContent) {
-                    throw FixerException::invalidFixedXml($filePath);
+                if ($currentFile->content !== $initialFile->content) {
+                    throw FixerException::invalidFixedXml($currentFile->path);
                 }
 
                 break;
@@ -120,70 +64,65 @@ final readonly class XmlFileProcessor
 
             $fixes = $this->runSniffs(
                 $document,
-                $sourceContent,
-                $filePath,
+                $currentFile,
                 $passReport,
                 $scope,
-                $changedLines,
             );
 
             if ($fixes === []) {
                 break;
             }
 
-            $fixResult = new FixApplier()->apply($sourceContent, $fixes);
-            $applied += $fixResult->applied;
-            $skipped += $fixResult->skipped;
+            $fixResult = new FixApplier()->apply($currentFile, $fixes);
 
             if ($fixResult->applied === 0) {
                 break;
             }
 
             $fixPasses++;
-            $fixedContentHash = hash('sha256', $fixResult->content);
+            $fixedContentHash = hash('sha256', $fixResult->file->content);
 
             if (
                 $fixPasses > self::MAX_FIX_PASSES
-                || $fixResult->content === $sourceContent
+                || $fixResult->file->content === $currentFile->content
                 || isset($seenContentHashes[$fixedContentHash])
             ) {
-                throw FixerException::didNotConverge($filePath);
+                throw FixerException::didNotConverge($currentFile->path);
             }
 
             $seenContentHashes[$fixedContentHash] = true;
             $scope = $scope->after($fixResult->appliedFixes);
-            $sourceContent = $fixResult->content;
+            $currentFile = $fixResult->file;
         }
 
-        return $this->finalizeResult(
-            $originalContent,
-            $sourceContent,
-            $fileReport,
-            $passReport,
-            $applied,
-            $skipped,
+        $fileReport->addViolations($passReport->getViolations());
+
+        return new XmlProcessingResult(
+            fileReport: $fileReport,
+            file: $currentFile,
+            modified: $currentFile !== $initialFile,
         );
     }
 
     /**
-     * @param list<int>|null $changedLines
      * @return list<Fix|FixPlan>
      * @throws FixerException
      */
     private function runSniffs(
         \DOMDocument $document,
-        string $sourceContent,
-        string $filePath,
+        File $file,
         FileReport $fileReport,
         SourceScope $scope,
-        ?array $changedLines,
     ): array {
         $fixes = [];
+        $changedLines = $scope->isWholeFile()
+            ? null
+            : $scope->lineNumbers($file);
 
         foreach ($this->sniffs as $sniff) {
             $start = microtime(true);
 
-            $sniffViolations = $sniff->process($document, $sourceContent, $filePath);
+            $sniffViolations = $sniff->process($document, $file);
 
             $this->report->addSniffTime($sniff::getCode(), microtime(true) - $start);
 
@@ -212,26 +151,10 @@ final readonly class XmlFileProcessor
         return $fixes;
     }
 
-    private function finalizeResult(
-        string $originalContent,
-        string $sourceContent,
-        FileReport $fileReport,
-        FileReport $passReport,
-        int $applied,
-        int $skipped,
-    ): XmlProcessingResult {
-        $fileReport->addViolations($passReport->getViolations());
-
-        return new XmlProcessingResult(
-            fileReport: $fileReport,
-            fixResult: $sourceContent !== $originalContent
-                ? new FixResult($sourceContent, $applied, $skipped)
-                : null,
-        );
-    }
-
-    private function parseXml(string $content, string $filePath, FileReport $fileReport): ?\DOMDocument
+    private function parseXml(File $file, FileReport $fileReport): ?\DOMDocument
     {
+        $content = $this->preprocessor->processForParsing($file->content);
+
         $previousUseErrors = libxml_use_internal_errors(true);
         $document = new \DOMDocument();
         $document->preserveWhiteSpace = true;
@@ -251,7 +174,7 @@ final readonly class XmlFileProcessor
 
             $fileReport->addViolation(new Violation(
                 sniffCode: 'DocbookCS.Internal',
-                filePath: $filePath,
+                filePath: $file->path,
                 line: $errors !== [] ? $errors[0]->line : 0,
                 beginOffset: 0,
                 untilOffset: 0,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DocbookCS\Tests\Unit\Runner;
 
+use DocbookCS\Diff\FileChange;
 use DocbookCS\Fix\Fixer\AttributeOrderFixer;
 use DocbookCS\Fix\FixerException;
 use DocbookCS\Report\FileReport;
@@ -14,6 +15,7 @@ use DocbookCS\Runner\XmlFileProcessor;
 use DocbookCS\Sniff\AttributeOrderSniff;
 use DocbookCS\Sniff\Fixable;
 use DocbookCS\Sniff\SniffInterface;
+use DocbookCS\Source\File;
 use DocbookCS\Violation\Severity;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -31,25 +33,44 @@ final class XmlFileProcessorTest extends TestCase
     #[Test]
     public function itReportsParseErrors(): void
     {
-        $report = $this->processor()->processString('<broken><unclosed>', 'bad.xml');
+        $report = $this->process($this->processor(), '<broken><unclosed>', 'bad.xml');
 
         $this->assertInternalError($report, 'XML parse error');
     }
 
     #[Test]
-    public function itReportsMissingFiles(): void
+    public function itStoresTheProvidedFilePathInFileReports(): void
     {
-        $report = $this->processor()->processFile('/nonexistent/path/file.xml');
+        $filePath = (getcwd() ?: '') . '/nonexistent/path/file.xml';
+        $report = $this->process($this->processor(), '<root/>', $filePath);
 
-        $this->assertInternalError($report, 'Could not read file');
+        self::assertSame($filePath, $report->filePath);
     }
 
     #[Test]
-    public function itStoresRelativeFilePathInFileReports(): void
+    public function itKeepsTheActualSourcePathInViolations(): void
     {
-        $report = $this->processor()->processFile((getcwd() ?: '') . '/nonexistent/path/file.xml');
+        $workingDirectory = getcwd();
+        self::assertIsString($workingDirectory);
 
-        self::assertSame('nonexistent/path/file.xml', $report->filePath);
+        $filePath = tempnam($workingDirectory, 'docbook-cs-');
+        self::assertIsString($filePath);
+
+        try {
+            file_put_contents($filePath, '<root xmlns="urn:test" xml:id="root"/>');
+
+            $report = $this->process(
+                $this->processor([new AttributeOrderSniff()]),
+                '<root xmlns="urn:test" xml:id="root"/>',
+                $filePath,
+            );
+
+            self::assertCount(1, $report->getViolations());
+            self::assertSame($filePath, $report->getViolations()[0]->filePath);
+            self::assertSame($filePath, $report->filePath);
+        } finally {
+            @unlink($filePath);
+        }
     }
 
     #[Test]
@@ -57,7 +78,7 @@ final class XmlFileProcessorTest extends TestCase
     {
         $xml = $this->xml('<chapter><simpara>ok</simpara></chapter>');
 
-        $report = $this->processor()->processString($xml);
+        $report = $this->process($this->processor(), $xml);
 
         self::assertFalse($report->hasViolations());
     }
@@ -77,7 +98,7 @@ final class XmlFileProcessorTest extends TestCase
             'php.ini' => '',
         ]));
 
-        $report = $processor->processString($xml);
+        $report = $this->process($processor, $xml);
 
         self::assertCount(
             0,
@@ -97,7 +118,7 @@ final class XmlFileProcessorTest extends TestCase
 
         $xml = $this->xml('<chapter><simpara>&custom.entity;</simpara></chapter>');
 
-        $report = $processor->processString($xml);
+        $report = $this->process($processor, $xml);
 
         self::assertCount(
             0,
@@ -113,7 +134,7 @@ final class XmlFileProcessorTest extends TestCase
     {
         $xml = $this->xml('<chapter><para>Hello</para></chapter>');
 
-        $report = $this->processor()->processString($xml);
+        $report = $this->process($this->processor(), $xml);
 
         self::assertSame(0, $report->getViolationCount());
     }
@@ -131,7 +152,7 @@ final class XmlFileProcessorTest extends TestCase
         </chapter>'
         );
 
-        $report = $this->processor([$sniff])->processString($xml);
+        $report = $this->process($this->processor([$sniff]), $xml);
 
         self::assertSame(2, $report->getViolationCount());
     }
@@ -149,7 +170,12 @@ final class XmlFileProcessorTest extends TestCase
         </chapter>'
         );
 
-        $report = $this->processor([$sniff])->processString($xml, 'f.xml', [3]);
+        $report = $this->process(
+            $this->processor([$sniff]),
+            $xml,
+            'f.xml',
+            new FileChange('f.xml', [3]),
+        );
 
         self::assertSame(1, $report->getViolationCount());
         self::assertSame(3, $report->getViolations()[0]->line);
@@ -170,7 +196,12 @@ final class XmlFileProcessorTest extends TestCase
         </chapter>'
         );
 
-        $report = $this->processor([$sniff])->processString($xml, 'x.xml', [6]);
+        $report = $this->process(
+            $this->processor([$sniff]),
+            $xml,
+            'x.xml',
+            new FileChange('x.xml', [6]),
+        );
 
         self::assertSame(1, $report->getViolationCount());
     }
@@ -186,7 +217,12 @@ final class XmlFileProcessorTest extends TestCase
         </chapter>'
         );
 
-        $report = $this->processor([$sniff])->processString($xml, 'x.xml', [3]);
+        $report = $this->process(
+            $this->processor([$sniff]),
+            $xml,
+            'x.xml',
+            new FileChange('x.xml', [3]),
+        );
 
         self::assertSame(0, $report->getViolationCount());
     }
@@ -204,7 +240,12 @@ final class XmlFileProcessorTest extends TestCase
     </chapter>'
         );
 
-        $report = $this->processor([$sniff])->processString($xml, 'x.xml', [4]);
+        $report = $this->process(
+            $this->processor([$sniff]),
+            $xml,
+            'x.xml',
+            new FileChange('x.xml', [4]),
+        );
 
         self::assertSame(1, $report->getViolationCount());
     }
@@ -223,7 +264,12 @@ final class XmlFileProcessorTest extends TestCase
     </chapter>'
         );
 
-        $report = $this->processor([$sniff])->processString($xml, 'x.xml', [4]);
+        $report = $this->process(
+            $this->processor([$sniff]),
+            $xml,
+            'x.xml',
+            new FileChange('x.xml', [4]),
+        );
 
         self::assertSame(1, $report->getViolationCount());
     }
@@ -245,7 +291,12 @@ final class XmlFileProcessorTest extends TestCase
         </chapter>'
         );
 
-        $report = $this->processor([$sniff])->processString($xml, 'x.xml', [6]);
+        $report = $this->process(
+            $this->processor([$sniff]),
+            $xml,
+            'x.xml',
+            new FileChange('x.xml', [6]),
+        );
 
         self::assertSame(0, $report->getViolationCount());
     }
@@ -262,18 +313,14 @@ final class XmlFileProcessorTest extends TestCase
         </chapter>'
         );
 
-        $report = $this->processor([$sniff])->processString($xml, 'x.xml', [7]);
+        $report = $this->process(
+            $this->processor([$sniff]),
+            $xml,
+            'x.xml',
+            new FileChange('x.xml', [7]),
+        );
 
         self::assertSame(0, $report->getViolationCount());
-    }
-
-    #[Test]
-    public function itKeepsInternalErrorsEvenWithDiffFiltering(): void
-    {
-        $report = $this->processor()->processFile('/nonexistent/path/file.xml', [42]);
-
-        self::assertTrue($report->hasViolations());
-        self::assertSame('DocbookCS.Internal', $report->getViolations()[0]->sniffCode);
     }
 
     #[Test]
@@ -289,7 +336,12 @@ final class XmlFileProcessorTest extends TestCase
         </chapter>'
         );
 
-        $report = $this->processor([$sniff])->processString($xml, 'f.xml', []);
+        $report = $this->process(
+            $this->processor([$sniff]),
+            $xml,
+            'f.xml',
+            new FileChange('f.xml', []),
+        );
 
         self::assertSame(0, $report->getViolationCount());
     }
@@ -307,12 +359,12 @@ final class XmlFileProcessorTest extends TestCase
                 return 'Test.NonFixable';
             }
 
-            public function process(\DOMDocument $document, string $content, string $filePath): array
+            public function process(\DOMDocument $document, File $source): array
             {
                 return [
                     new Violation(
                         sniffCode: self::getCode(),
-                        filePath: $filePath,
+                        filePath: $source->path,
                         line: 2,
                         beginOffset: 0,
                         untilOffset: 7,
@@ -328,7 +380,7 @@ final class XmlFileProcessorTest extends TestCase
             }
         };
 
-        $report = $this->processor([$sniff])->processString($this->xml('<root/>'));
+        $report = $this->process($this->processor([$sniff]), $this->xml('<root/>'));
 
         self::assertSame(1, $report->getViolationCount());
     }
@@ -351,12 +403,12 @@ final class XmlFileProcessorTest extends TestCase
                 return AttributeOrderFixer::class;
             }
 
-            public function process(\DOMDocument $document, string $content, string $filePath): array
+            public function process(\DOMDocument $document, File $source): array
             {
                 return [
                     new Violation(
                         sniffCode: self::getCode(),
-                        filePath: $filePath,
+                        filePath: $source->path,
                         line: 1,
                         beginOffset: 0,
                         untilOffset: 7,
@@ -374,8 +426,9 @@ final class XmlFileProcessorTest extends TestCase
         $this->expectException(FixerException::class);
         $this->expectExceptionMessageIsOrContains('Violations cannot be content-less when passed to a fixer.');
 
-        $this->processor([$sniff])->processString(
-            $this->xml('<root xmlns="urn:test" xml:id="root"/>')
+        $this->process(
+            $this->processor([$sniff]),
+            $this->xml('<root xmlns="urn:test" xml:id="root"/>'),
         );
     }
 
@@ -397,7 +450,7 @@ final class XmlFileProcessorTest extends TestCase
                 ]),
             );
 
-            $processor->processFile($filePath);
+            $this->processFile($processor, $filePath);
 
             self::assertSame(
                 '<root>&prefix;<tag xml:id="id" xmlns="urn:test"/></root>',
@@ -424,12 +477,12 @@ final class XmlFileProcessorTest extends TestCase
                 return 'Test.Stub';
             }
 
-            public function process(\DOMDocument $document, string $content, string $filePath): array
+            public function process(\DOMDocument $document, File $source): array
             {
                 return array_map(
                     fn(int $line) => new Violation(
                         sniffCode: self::getCode(),
-                        filePath: $filePath,
+                        filePath: $source->path,
                         line: $line,
                         beginOffset: 0,
                         untilOffset: 0,
@@ -448,6 +501,28 @@ final class XmlFileProcessorTest extends TestCase
         $sniff->lines = $lines;
 
         return $sniff;
+    }
+
+    private function process(
+        XmlFileProcessor $processor,
+        string $content,
+        string $path = 'input.xml',
+        ?FileChange $fileChange = null,
+    ): FileReport {
+        return $processor->process(new File($path, $content), $fileChange)->fileReport;
+    }
+
+    private function processFile(XmlFileProcessor $processor, string $path): FileReport
+    {
+        $content = file_get_contents($path);
+        self::assertIsString($content);
+
+        $result = $processor->process(new File($path, $content));
+        if ($result->hasPendingFixesToPersist()) {
+            file_put_contents($path, $result->fixedContent());
+        }
+
+        return $result->fileReport;
     }
 
     /** @param list<SniffInterface> $sniffs */

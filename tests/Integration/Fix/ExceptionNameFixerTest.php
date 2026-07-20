@@ -10,6 +10,7 @@ use DocbookCS\Fix\Fixer\ExceptionNameFixer;
 use DocbookCS\Fix\FixResult;
 use DocbookCS\Runner\RunMode;
 use DocbookCS\Sniff\ExceptionNameSniff;
+use DocbookCS\Source\File;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -29,11 +30,11 @@ final class ExceptionNameFixerTest extends TestCase
     {
         $content = '<root><classname>RuntimeException</classname></root>';
         $document = $this->createDocument($content);
+        $source = new File('file.xml', $content);
 
         $violations = new ExceptionNameSniff(RunMode::Fix)->process(
             $document,
-            $content,
-            'file.xml',
+            $source,
         );
 
         $beginOffset = (int) strpos($content, '<classname>');
@@ -47,9 +48,9 @@ final class ExceptionNameFixerTest extends TestCase
 
         $fix = new ExceptionNameFixer()->process($violations[0]);
 
-        $result = new FixApplier()->apply($content, [$fix]);
+        $result = new FixApplier()->apply($source, [$fix]);
 
-        self::assertSame('<root><exceptionname>RuntimeException</exceptionname></root>', $result->content);
+        self::assertSame('<root><exceptionname>RuntimeException</exceptionname></root>', $result->file->content);
         self::assertSame(1, $result->applied);
     }
 
@@ -58,11 +59,11 @@ final class ExceptionNameFixerTest extends TestCase
     {
         $content = '<root><classname linkend="runtime-exception">RuntimeException</classname></root>';
         $document = $this->createDocument($content);
+        $source = new File('file.xml', $content);
 
         $violations = new ExceptionNameSniff(RunMode::Fix)->process(
             $document,
-            $content,
-            'file.xml',
+            $source,
         );
 
         self::assertCount(1, $violations);
@@ -73,11 +74,11 @@ final class ExceptionNameFixerTest extends TestCase
 
         $fix = new ExceptionNameFixer()->process($violations[0]);
 
-        $result = new FixApplier()->apply($content, [$fix]);
+        $result = new FixApplier()->apply($source, [$fix]);
 
         self::assertSame(
             '<root><exceptionname linkend="runtime-exception">RuntimeException</exceptionname></root>',
-            $result->content,
+            $result->file->content,
         );
         self::assertSame(1, $result->applied);
     }
@@ -87,11 +88,11 @@ final class ExceptionNameFixerTest extends TestCase
     {
         $content = '<root><classname>RegularClass</classname><classname>RuntimeException</classname></root>';
         $document = $this->createDocument($content);
+        $source = new File('file.xml', $content);
 
         $violations = new ExceptionNameSniff(RunMode::Fix)->process(
             $document,
-            $content,
-            'file.xml',
+            $source,
         );
 
         $sourceContent = '<classname>RuntimeException</classname>';
@@ -104,11 +105,11 @@ final class ExceptionNameFixerTest extends TestCase
 
         $fix = new ExceptionNameFixer()->process($violations[0]);
 
-        $result = new FixApplier()->apply($content, [$fix]);
+        $result = new FixApplier()->apply($source, [$fix]);
 
         self::assertSame(
             '<root><classname>RegularClass</classname><exceptionname>RuntimeException</exceptionname></root>',
-            $result->content,
+            $result->file->content,
         );
         self::assertSame(1, $result->applied);
     }

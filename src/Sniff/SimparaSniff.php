@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DocbookCS\Sniff;
 
 use DocbookCS\Fix\Fixer\SimparaFixer;
+use DocbookCS\Source\File;
 use DocbookCS\Violation\SourceRange;
 
 final class SimparaSniff extends AbstractSniff implements Fixable
@@ -113,8 +114,11 @@ final class SimparaSniff extends AbstractSniff implements Fixable
         return SimparaFixer::class;
     }
 
-    /** @throws \LogicException if an invalid severity level is configured */
-    public function process(\DOMDocument $document, string $content, string $filePath): array
+    /**
+     * @throws \LogicException if an invalid severity level is configured
+     * @throws \OutOfBoundsException if a matched tag offset lies outside the source
+     */
+    public function process(\DOMDocument $document, File $file): array
     {
         $violations = [];
         $sourceMatchIndex = 0;
@@ -124,7 +128,7 @@ final class SimparaSniff extends AbstractSniff implements Fixable
             return [];
         }
 
-        $sourceMatches = $this->sourceMatches($content);
+        $sourceMatches = $this->sourceMatches($file);
         $allowed = $this->getAllowedElements();
 
         /** @var \DOMElement $para */
@@ -157,7 +161,7 @@ final class SimparaSniff extends AbstractSniff implements Fixable
             }
 
             $violations[] = $this->createViolation(
-                $filePath,
+                $file->path,
                 $match['affectedRanges'][0]->line,
                 $match['beginOffset'],
                 $match['untilOffset'],
@@ -213,10 +217,11 @@ final class SimparaSniff extends AbstractSniff implements Fixable
      *     selfClosing: bool,
      *     affectedRanges: non-empty-list<SourceRange>
      * }>
+     * @throws \OutOfBoundsException if a matched tag offset lies outside the source
      */
-    private function sourceMatches(string $content): array
+    private function sourceMatches(File $file): array
     {
-        preg_match_all(self::PARA_TAG_PATTERN, $content, $matches, PREG_OFFSET_CAPTURE);
+        preg_match_all(self::PARA_TAG_PATTERN, $file->content, $matches, PREG_OFFSET_CAPTURE);
 
         /** @var list<array{offset: int, range: SourceRange}> $stack */
         $stack = [];
@@ -232,7 +237,7 @@ final class SimparaSniff extends AbstractSniff implements Fixable
                     'content' => $tag,
                     'selfClosing' => true,
                     'affectedRanges' => [new SourceRange(
-                        $this->lineFromOffset($content, $offset),
+                        $file->lineAtOffset($offset)->number,
                         $offset + 1,
                         $offset + 1 + strlen(self::ELEMENT_NAME),
                     )],
@@ -244,7 +249,7 @@ final class SimparaSniff extends AbstractSniff implements Fixable
                 $stack[] = [
                     'offset' => $offset,
                     'range' => new SourceRange(
-                        $this->lineFromOffset($content, $offset),
+                        $file->lineAtOffset($offset)->number,
                         $offset + 1,
                         $offset + 1 + strlen(self::ELEMENT_NAME),
                     ),
@@ -261,12 +266,12 @@ final class SimparaSniff extends AbstractSniff implements Fixable
             $sourceMatches[] = [
                 'beginOffset' => $start,
                 'untilOffset' => $untilOffset,
-                'content' => substr($content, $start, $untilOffset - $start),
+                'content' => substr($file->content, $start, $untilOffset - $start),
                 'selfClosing' => false,
                 'affectedRanges' => [
                     $opening['range'],
                     new SourceRange(
-                        $this->lineFromOffset($content, $offset),
+                        $file->lineAtOffset($offset)->number,
                         $offset + 2,
                         $offset + 2 + strlen(self::ELEMENT_NAME),
                     ),
@@ -280,10 +285,5 @@ final class SimparaSniff extends AbstractSniff implements Fixable
         );
 
         return $sourceMatches;
-    }
-
-    private function lineFromOffset(string $content, int $offset): int
-    {
-        return substr_count($content, "\n", 0, $offset) + 1;
     }
 }

@@ -10,6 +10,7 @@ use DocbookCS\Fix\Fixer\WhitespaceFixer;
 use DocbookCS\Fix\FixResult;
 use DocbookCS\Runner\RunMode;
 use DocbookCS\Sniff\WhitespaceSniff;
+use DocbookCS\Source\File;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -29,11 +30,11 @@ final class WhitespaceFixerTest extends TestCase
     {
         $content = "<root> \n \t<tag/>\n</root>";
         $document = $this->createDocument($content);
+        $source = new File('file.xml', $content);
 
         $violations = new WhitespaceSniff(RunMode::Fix)->process(
             $document,
-            $content,
-            'file.xml',
+            $source,
         );
 
         $secondLineOffset = (int) strpos($content, " \t<tag/>");
@@ -52,9 +53,9 @@ final class WhitespaceFixerTest extends TestCase
             $fixes[] = $fixer->process($violation);
         }
 
-        $result = new FixApplier()->apply($content, $fixes);
+        $result = new FixApplier()->apply($source, $fixes);
 
-        self::assertSame("<root>\n  <tag/>\n</root>", $result->content);
+        self::assertSame("<root>\n  <tag/>\n</root>", $result->file->content);
         self::assertSame(2, $result->applied);
     }
 

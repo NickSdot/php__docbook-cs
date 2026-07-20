@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DocbookCS\Tests\Integration\Runner;
 
+use DocbookCS\Diff\FileChange;
 use DocbookCS\Fix\Fixer\AttributeOrderFixer;
 use DocbookCS\Fix\FixerException;
 use DocbookCS\Runner\RunMode;
@@ -12,6 +13,7 @@ use DocbookCS\Sniff\AbstractSniff;
 use DocbookCS\Sniff\ExceptionNameSniff;
 use DocbookCS\Sniff\Fixable;
 use DocbookCS\Sniff\SimparaSniff;
+use DocbookCS\Source\File;
 use DocbookCS\Tests\Support\Fix\LineBreakFixer;
 use DocbookCS\Tests\Support\Fix\ToggleElementFixer;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -33,7 +35,7 @@ final class FixConvergenceTest extends TestCase
                 new ExceptionNameSniff(RunMode::Fix),
             ]);
 
-            $report = $processor->processFile($filePath);
+            $report = $this->processFile($processor, $filePath);
 
             self::assertSame(
                 '<root><simpara>A</simpara><simpara><exceptionname>RuntimeException</exceptionname></simpara></root>',
@@ -65,16 +67,16 @@ final class FixConvergenceTest extends TestCase
                     return LineBreakFixer::class;
                 }
 
-                public function process(\DOMDocument $document, string $content, string $filePath): array
+                public function process(\DOMDocument $document, File $source): array
                 {
-                    $offset = strpos($content, self::ELEMENT);
+                    $offset = strpos($source->content, self::ELEMENT);
                     if ($offset === false) {
                         return [];
                     }
 
                     return [$this->createViolation(
-                        $filePath,
-                        substr_count($content, "\n", 0, $offset) + 1,
+                        $source->path,
+                        substr_count($source->content, "\n", 0, $offset) + 1,
                         $offset,
                         $offset + strlen(self::ELEMENT),
                         'Replace the line-break marker.',
@@ -88,20 +90,20 @@ final class FixConvergenceTest extends TestCase
                     return 'Test.BadElement';
                 }
 
-                public function process(\DOMDocument $document, string $content, string $filePath): array
+                public function process(\DOMDocument $document, File $source): array
                 {
                     $element = $document->getElementsByTagName('bad')->item(0);
                     if (!$element instanceof \DOMElement) {
                         return [];
                     }
 
-                    $offset = strpos($content, '<bad/>');
+                    $offset = strpos($source->content, '<bad/>');
                     if ($offset === false) {
                         return [];
                     }
 
                     return [$this->createViolation(
-                        $filePath,
+                        $source->path,
                         $element->getLineNo(),
                         $offset,
                         $offset + strlen('<bad/>'),
@@ -115,7 +117,7 @@ final class FixConvergenceTest extends TestCase
                 $badElementSniff,
             ]);
 
-            $report = $processor->processFile($filePath);
+            $report = $this->processFile($processor, $filePath);
 
             self::assertSame("<root>\n<bad/></root>", file_get_contents($filePath));
             self::assertSame(1, $report->getViolationCount());
@@ -143,16 +145,16 @@ final class FixConvergenceTest extends TestCase
                     return LineBreakFixer::class;
                 }
 
-                public function process(\DOMDocument $document, string $content, string $filePath): array
+                public function process(\DOMDocument $document, File $source): array
                 {
                     $element = '<line-break/>';
-                    $offset = strpos($content, $element);
+                    $offset = strpos($source->content, $element);
                     if ($offset === false) {
                         return [];
                     }
 
                     return [$this->createViolation(
-                        $filePath,
+                        $source->path,
                         2,
                         $offset,
                         $offset + strlen($element),
@@ -167,17 +169,17 @@ final class FixConvergenceTest extends TestCase
                     return 'Test.ScopedBadElement';
                 }
 
-                public function process(\DOMDocument $document, string $content, string $filePath): array
+                public function process(\DOMDocument $document, File $source): array
                 {
                     $element = $document->getElementsByTagName('bad')->item(0);
-                    $offset = strpos($content, '<bad/>');
+                    $offset = strpos($source->content, '<bad/>');
 
                     if (!$element instanceof \DOMElement || $offset === false) {
                         return [];
                     }
 
                     return [$this->createViolation(
-                        $filePath,
+                        $source->path,
                         $element->getLineNo(),
                         $offset,
                         $offset + strlen('<bad/>'),
@@ -188,7 +190,11 @@ final class FixConvergenceTest extends TestCase
             };
             $processor = new XmlFileProcessor([$lineBreakSniff, $badElementSniff]);
 
-            $report = $processor->processFile($filePath, [2]);
+            $report = $this->processFile(
+                $processor,
+                $filePath,
+                new FileChange($filePath, [2]),
+            );
 
             self::assertSame("<root>\n\n<bad/>\n</root>", file_get_contents($filePath));
             self::assertSame(1, $report->getViolationCount());
@@ -216,16 +222,16 @@ final class FixConvergenceTest extends TestCase
                     return ToggleElementFixer::class;
                 }
 
-                public function process(\DOMDocument $document, string $content, string $filePath): array
+                public function process(\DOMDocument $document, File $source): array
                 {
-                    $element = str_contains($content, '<alpha/>') ? '<alpha/>' : '<beta/>';
-                    $offset = strpos($content, $element);
+                    $element = str_contains($source->content, '<alpha/>') ? '<alpha/>' : '<beta/>';
+                    $offset = strpos($source->content, $element);
                     if ($offset === false) {
                         return [];
                     }
 
                     return [$this->createViolation(
-                        $filePath,
+                        $source->path,
                         1,
                         $offset,
                         $offset + strlen($element),
@@ -239,7 +245,7 @@ final class FixConvergenceTest extends TestCase
             ]);
 
             try {
-                $processor->processFile($filePath);
+                $this->processFile($processor, $filePath);
                 self::fail('Expected the cycling fixer to fail.');
             } catch (FixerException $exception) {
                 self::assertStringContainsString('did not converge', $exception->getMessage());
@@ -269,15 +275,15 @@ final class FixConvergenceTest extends TestCase
                     return AttributeOrderFixer::class;
                 }
 
-                public function process(\DOMDocument $document, string $content, string $filePath): array
+                public function process(\DOMDocument $document, File $source): array
                 {
-                    $offset = strpos($content, '<valid/>');
+                    $offset = strpos($source->content, '<valid/>');
                     if ($offset === false) {
                         return [];
                     }
 
                     return [$this->createViolation(
-                        $filePath,
+                        $source->path,
                         1,
                         $offset,
                         $offset + strlen('<valid/>'),
@@ -289,7 +295,7 @@ final class FixConvergenceTest extends TestCase
             $processor = new XmlFileProcessor([$invalidXmlSniff]);
 
             try {
-                $processor->processFile($filePath);
+                $this->processFile($processor, $filePath);
                 self::fail('Expected the invalid fixer result to fail.');
             } catch (FixerException $exception) {
                 self::assertStringContainsString('produced invalid XML', $exception->getMessage());
@@ -299,6 +305,22 @@ final class FixConvergenceTest extends TestCase
         } finally {
             @unlink($filePath);
         }
+    }
+
+    private function processFile(
+        XmlFileProcessor $processor,
+        string $path,
+        ?FileChange $fileChange = null,
+    ): \DocbookCS\Report\FileReport {
+        $content = file_get_contents($path);
+        self::assertIsString($content);
+
+        $result = $processor->process(new File($path, $content), $fileChange);
+        if ($result->hasPendingFixesToPersist()) {
+            file_put_contents($path, $result->fixedContent());
+        }
+
+        return $result->fileReport;
     }
 
     private function temporaryFile(string $content): string

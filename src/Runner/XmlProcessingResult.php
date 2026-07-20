@@ -5,29 +5,30 @@ declare(strict_types=1);
 namespace DocbookCS\Runner;
 
 use DocbookCS\Fix\FixerException;
-use DocbookCS\Fix\FixResult;
 use DocbookCS\Report\FileReport;
+use DocbookCS\Source\File;
 
 final readonly class XmlProcessingResult
 {
     public function __construct(
         public FileReport $fileReport,
-        public ?FixResult $fixResult = null,
+        public File $file,
+        public bool $modified,
     ) {
     }
 
     public function hasPendingFixesToPersist(): bool
     {
-        return $this->fixResult !== null;
+        return $this->modified;
     }
 
     /** @throws FixerException */
     public function fixedContent(): string
     {
-        if ($this->fixResult === null) {
+        if (!$this->modified) {
             throw FixerException::cannotReadFixedContent();
         }
 
-        return $this->fixResult->content;
+        return $this->file->content;
     }
 }

@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace DocbookCS\Fix;
 
+use DocbookCS\Source\File;
+
 final class FixApplier
 {
     /**
      * @param list<Fix|FixPlan> $fixes
      */
-    public function apply(string $content, array $fixes): FixResult
+    public function apply(File $file, array $fixes): FixResult
     {
         if ($fixes === []) {
-            return new FixResult($content);
+            return new FixResult($file);
         }
 
         $plans = [];
@@ -36,10 +38,12 @@ final class FixApplier
         $acceptedFixes = [];
         $acceptedPlans = 0;
         $skipped = 0;
+
+        $content = $file->content;
         $length = strlen($content);
 
         foreach ($plans as ['plan' => $plan]) {
-            if (!$this->canApply($content, $length, $plan, $acceptedFixes)) {
+            if (!$this->canApply($file, $length, $plan, $acceptedFixes)) {
                 $skipped++;
                 continue;
             }
@@ -68,7 +72,7 @@ final class FixApplier
         $content = $fixedContent . substr($content, $sourceOffset);
 
         return new FixResult(
-            content: $content,
+            file: $file->withContent($content),
             applied: $acceptedPlans,
             skipped: $skipped,
             appliedFixes: $acceptedFixes,
@@ -79,17 +83,19 @@ final class FixApplier
      * @param list<Fix> $acceptedFixes
      */
     private function canApply(
-        string $content,
+        File $file,
         int $contentLength,
         FixPlan $plan,
         array $acceptedFixes,
     ): bool {
+        $content = $file->content;
         $first = $plan->fixes[0];
         $previous = null;
 
         foreach ($plan->fixes as $fix) {
             if (
-                $fix->filePath !== $first->filePath
+                $fix->filePath !== $file->path
+                || $fix->filePath !== $first->filePath
                 || $fix->sniffCode !== $first->sniffCode
                 || $fix->beginOffset < 0
                 || $fix->untilOffset < $fix->beginOffset

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DocbookCS\Sniff;
 
 use DocbookCS\Fix\Fixer\WhitespaceFixer;
+use DocbookCS\Source\File;
 
 /**
  * Backward-compatible aggregate of the focused whitespace rules.
@@ -26,13 +27,18 @@ final class WhitespaceSniff extends AbstractSniff implements Fixable
     }
 
     /** @throws \LogicException if an invalid severity level is configured */
-    public function process(\DOMDocument $document, string $content, string $filePath): array
+    public function process(\DOMDocument $document, File $file): array
     {
         $violations = [];
         $offset = 0;
         $line = 1;
 
-        $lines = preg_split(self::LINE_ENDING_PATTERN, $content, -1, PREG_SPLIT_DELIM_CAPTURE);
+        $lines = preg_split(
+            self::LINE_ENDING_PATTERN,
+            $file->content,
+            -1,
+            PREG_SPLIT_DELIM_CAPTURE,
+        );
         if ($lines === false) {
             throw new \LogicException('Could not split source content into lines.'); // @codeCoverageIgnore
         }
@@ -50,7 +56,7 @@ final class WhitespaceSniff extends AbstractSniff implements Fixable
                 };
 
                 $violations[] = $this->createViolation(
-                    $filePath,
+                    $file->path,
                     $line,
                     $offset,
                     $offset + $lineContentLength,

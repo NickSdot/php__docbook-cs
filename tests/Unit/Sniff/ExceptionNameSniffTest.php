@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DocbookCS\Tests\Unit\Sniff;
 
 use DocbookCS\Sniff\ExceptionNameSniff;
+use DocbookCS\Source\File;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -27,7 +28,7 @@ final class ExceptionNameSniffTest extends TestCase
     {
         $content = '<root></root>';
         $doc = $this->createDocument($content);
-        $violations = new ExceptionNameSniff()->process($doc, $content, 'test.xml');
+        $violations = new ExceptionNameSniff()->process($doc, new File('test.xml', $content));
 
         self::assertSame([], $violations);
     }
@@ -37,7 +38,7 @@ final class ExceptionNameSniffTest extends TestCase
     {
         $content = '<root><classname>   </classname></root>';
         $doc = $this->createDocument($content);
-        $violations = new ExceptionNameSniff()->process($doc, $content, 'test.xml');
+        $violations = new ExceptionNameSniff()->process($doc, new File('test.xml', $content));
 
         self::assertSame([], $violations);
     }
@@ -47,7 +48,7 @@ final class ExceptionNameSniffTest extends TestCase
     {
         $content = '<root><classname>MyService</classname></root>';
         $doc = $this->createDocument($content);
-        $violations = new ExceptionNameSniff()->process($doc, $content, 'test.xml');
+        $violations = new ExceptionNameSniff()->process($doc, new File('test.xml', $content));
 
         self::assertSame([], $violations);
     }
@@ -57,7 +58,7 @@ final class ExceptionNameSniffTest extends TestCase
     {
         $content = '<root><classname>RuntimeException</classname></root>';
         $doc = $this->createDocument($content);
-        $violations = new ExceptionNameSniff()->process($doc, $content, 'file.xml');
+        $violations = new ExceptionNameSniff()->process($doc, new File('file.xml', $content));
 
         self::assertCount(1, $violations);
         self::assertStringContainsString(
@@ -71,7 +72,7 @@ final class ExceptionNameSniffTest extends TestCase
     {
         $content = '<root><classname>TypeError</classname></root>';
         $doc = $this->createDocument($content);
-        $violations = new ExceptionNameSniff()->process($doc, $content, 'file.xml');
+        $violations = new ExceptionNameSniff()->process($doc, new File('file.xml', $content));
 
         self::assertCount(1, $violations);
         self::assertStringContainsString(
@@ -85,7 +86,7 @@ final class ExceptionNameSniffTest extends TestCase
     {
         $content = '<root><classname>CustomThrowable</classname></root>';
         $doc = $this->createDocument($content);
-        $violations = new ExceptionNameSniff()->process($doc, $content, 'file.xml');
+        $violations = new ExceptionNameSniff()->process($doc, new File('file.xml', $content));
 
         self::assertCount(1, $violations);
         self::assertStringContainsString(
@@ -99,7 +100,7 @@ final class ExceptionNameSniffTest extends TestCase
     {
         $content = '<root><classname>Foo\Bar\BazException</classname></root>';
         $doc = $this->createDocument($content);
-        $violations = new ExceptionNameSniff()->process($doc, $content, 'file.xml');
+        $violations = new ExceptionNameSniff()->process($doc, new File('file.xml', $content));
 
         self::assertCount(1, $violations);
         self::assertStringContainsString(
@@ -113,7 +114,7 @@ final class ExceptionNameSniffTest extends TestCase
     {
         $content = '<root><classname>Exception\ButNotActually</classname></root>';
         $doc = $this->createDocument($content);
-        $violations = new ExceptionNameSniff()->process($doc, $content, 'file.xml');
+        $violations = new ExceptionNameSniff()->process($doc, new File('file.xml', $content));
 
         self::assertSame([], $violations);
     }
@@ -129,7 +130,7 @@ final class ExceptionNameSniffTest extends TestCase
             </root>';
 
         $doc = $this->createDocument($content);
-        $violations = new ExceptionNameSniff()->process($doc, $content, 'file.xml');
+        $violations = new ExceptionNameSniff()->process($doc, new File('file.xml', $content));
 
         self::assertCount(2, $violations);
     }
@@ -139,7 +140,7 @@ final class ExceptionNameSniffTest extends TestCase
     {
         $content = '<root><ooclass><classname>RuntimeException</classname></ooclass></root>';
         $doc = $this->createDocument($content);
-        $violations = new ExceptionNameSniff()->process($doc, $content, 'file.xml');
+        $violations = new ExceptionNameSniff()->process($doc, new File('file.xml', $content));
 
         self::assertSame([], $violations);
     }
@@ -149,7 +150,7 @@ final class ExceptionNameSniffTest extends TestCase
     {
         $content = '<root><classname>RuntimeException</classname></root>';
         $doc = $this->createDocument($content);
-        $violations = new ExceptionNameSniff()->process($doc, $content, 'my-file.xml');
+        $violations = new ExceptionNameSniff()->process($doc, new File('my-file.xml', $content));
 
         self::assertCount(1, $violations);
         self::assertSame('my-file.xml', $violations[0]->filePath);
@@ -161,7 +162,7 @@ final class ExceptionNameSniffTest extends TestCase
         $content = '<root><classname>RuntimeException</classname></root>';
         $doc = $this->createDocument($content);
 
-        $violations = new ExceptionNameSniff()->process($doc, $content, 'file.xml');
+        $violations = new ExceptionNameSniff()->process($doc, new File('file.xml', $content));
 
         $beginOffset = (int) strpos($content, '<classname>');
         $sourceContent = '<classname>RuntimeException</classname>';
@@ -179,7 +180,7 @@ final class ExceptionNameSniffTest extends TestCase
         $content = '<root><classname>RegularClass</classname><classname>RuntimeException</classname></root>';
         $doc = $this->createDocument($content);
 
-        $violations = new ExceptionNameSniff()->process($doc, $content, 'file.xml');
+        $violations = new ExceptionNameSniff()->process($doc, new File('file.xml', $content));
 
         $sourceContent = '<classname>RuntimeException</classname>';
         $beginOffset = (int) strpos($content, $sourceContent);

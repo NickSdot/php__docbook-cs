@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DocbookCS\Sniff;
 
 use DocbookCS\Fix\Fixer\ExceptionNameFixer;
+use DocbookCS\Source\File;
 use DocbookCS\Violation\SourceRange;
 
 /**
@@ -41,8 +42,11 @@ final class ExceptionNameSniff extends AbstractSniff implements Fixable
         return ExceptionNameFixer::class;
     }
 
-    /** @throws \LogicException */
-    public function process(\DOMDocument $document, string $content, string $filePath): array
+    /**
+     * @throws \LogicException
+     * @throws \OutOfBoundsException if a matched tag offset lies outside the source
+     */
+    public function process(\DOMDocument $document, File $file): array
     {
         $violations = [];
         $sourceMatchIndex = 0;
@@ -52,7 +56,7 @@ final class ExceptionNameSniff extends AbstractSniff implements Fixable
             return [];
         }
 
-        $sourceMatches = $this->sourceMatches($content);
+        $sourceMatches = $this->sourceMatches($file);
 
         /** @var \DOMElement $node */
         foreach ($classnames as $node) {
@@ -81,7 +85,7 @@ final class ExceptionNameSniff extends AbstractSniff implements Fixable
             }
 
             $violations[] = $this->createViolation(
-                $filePath,
+                $file->path,
                 $match['affectedRanges'][0]->line,
                 $match['beginOffset'],
                 $match['untilOffset'],
@@ -116,10 +120,11 @@ final class ExceptionNameSniff extends AbstractSniff implements Fixable
      *     text: string,
      *     affectedRanges: non-empty-list<SourceRange>
      * }>
+     * @throws \OutOfBoundsException if a matched tag offset lies outside the source
      */
-    private function sourceMatches(string $content): array
+    private function sourceMatches(File $file): array
     {
-        preg_match_all(self::CLASSNAME_PATTERN, $content, $matches, PREG_OFFSET_CAPTURE);
+        preg_match_all(self::CLASSNAME_PATTERN, $file->content, $matches, PREG_OFFSET_CAPTURE);
 
         $sourceMatches = [];
         foreach ($matches[0] as $i => [$fullMatch, $offset]) {
@@ -132,12 +137,12 @@ final class ExceptionNameSniff extends AbstractSniff implements Fixable
                 'text' => trim($matches[1][$i][0]),
                 'affectedRanges' => [
                     new SourceRange(
-                        $this->lineFromOffset($content, $offset),
+                        $file->lineAtOffset($offset)->number,
                         $offset + 1,
                         $offset + 1 + strlen(self::ELEMENT_NAME),
                     ),
                     new SourceRange(
-                        $this->lineFromOffset($content, $closingOffset),
+                        $file->lineAtOffset($closingOffset)->number,
                         $closingOffset + 2,
                         $closingOffset + 2 + strlen(self::ELEMENT_NAME),
                     ),
@@ -146,10 +151,5 @@ final class ExceptionNameSniff extends AbstractSniff implements Fixable
         }
 
         return $sourceMatches;
-    }
-
-    private function lineFromOffset(string $content, int $offset): int
-    {
-        return substr_count($content, "\n", 0, $offset) + 1;
     }
 }

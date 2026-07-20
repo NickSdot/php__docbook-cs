@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DocbookCS\Runner;
 
 use DocbookCS\Diff\Diff;
+use DocbookCS\Diff\FileChange;
 use DocbookCS\Path\PathMatcher;
 
 final readonly class RunScopeResolver
@@ -20,7 +21,7 @@ final readonly class RunScopeResolver
 
     /**
      * @param list<string> $files
-     * @return array<string, list<int>|null>
+     * @return array<string, FileChange|null>
      */
     public function resolve(array $files, ?Diff $diff, bool $strict): array
     {
@@ -34,7 +35,7 @@ final readonly class RunScopeResolver
 
             $fileChange = $diff->changeFor($file);
             if ($fileChange !== null) {
-                $targets[$file] = $fileChange->lineNumbers;
+                $targets[$file] = $fileChange;
             }
         }
 
@@ -47,7 +48,7 @@ final readonly class RunScopeResolver
         return $targets;
     }
 
-    /** @param array<string, list<int>|null> $targets */
+    /** @param array<string, FileChange|null> $targets */
     private function expandReferencedTargets(array &$targets): void
     {
         $pending = array_keys($targets);

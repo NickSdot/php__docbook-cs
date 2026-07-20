@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace DocbookCS\Sniff;
 
 use DocbookCS\Fix\Fixer\TrailingWhitespaceFixer;
-use DocbookCS\Source\SourceLines;
+use DocbookCS\Source\File;
 
 final class TrailingWhitespaceSniff extends AbstractSniff implements Fixable
 {
@@ -23,15 +23,15 @@ final class TrailingWhitespaceSniff extends AbstractSniff implements Fixable
     }
 
     /** @throws \LogicException if an invalid severity level is configured */
-    public function process(\DOMDocument $document, string $content, string $filePath): array
+    public function process(\DOMDocument $document, File $file): array
     {
         $violations = [];
 
-        foreach (SourceLines::from($content) as $sourceLine) {
+        foreach ($file->lines() as $line) {
             if (
                 !preg_match(
                     self::TRAILING_WHITESPACE_PATTERN,
-                    $sourceLine['content'],
+                    $line->content,
                     $matches,
                     PREG_OFFSET_CAPTURE,
                 )
@@ -40,11 +40,11 @@ final class TrailingWhitespaceSniff extends AbstractSniff implements Fixable
             }
 
             [$whitespace, $relativeOffset] = $matches[0];
-            $beginOffset = $sourceLine['beginOffset'] + $relativeOffset;
+            $beginOffset = $line->beginOffset + $relativeOffset;
 
             $violations[] = $this->createViolation(
-                $filePath,
-                $sourceLine['line'],
+                $file->path,
+                $line->number,
                 $beginOffset,
                 $beginOffset + strlen($whitespace),
                 self::MESSAGE,

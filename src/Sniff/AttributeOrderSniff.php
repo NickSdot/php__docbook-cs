@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DocbookCS\Sniff;
 
 use DocbookCS\Fix\Fixer\AttributeOrderFixer;
+use DocbookCS\Source\File;
 
 /**
  * Ensures that when an element has both xml:id and xmlns (or xmlns:*)
@@ -28,13 +29,16 @@ final class AttributeOrderSniff extends AbstractSniff implements Fixable
         return AttributeOrderFixer::class;
     }
 
-    /** @throws \LogicException if an invalid severity level is configured */
-    public function process(\DOMDocument $document, string $content, string $filePath): array
+    /**
+     * @throws \LogicException if an invalid severity level is configured
+     * @throws \OutOfBoundsException if a matched tag offset lies outside the source
+     */
+    public function process(\DOMDocument $document, File $file): array
     {
         $violations = [];
 
         // Match ONLY opening tags (skip closing, comments, xml decl)
-        preg_match_all(self::OPENING_TAG_PATTERN, $content, $matches, PREG_OFFSET_CAPTURE);
+        preg_match_all(self::OPENING_TAG_PATTERN, $file->content, $matches, PREG_OFFSET_CAPTURE);
 
         foreach ($matches[0] as $i => [$fullMatch, $offset]) {
             $tagName = $matches[1][$i][0];
@@ -53,8 +57,8 @@ final class AttributeOrderSniff extends AbstractSniff implements Fixable
             $this->checkAttributes(
                 $tagName,
                 $attrString,
-                $filePath,
-                $this->lineFromOffset($content, $beginOffset),
+                $file->path,
+                $file->lineAtOffset($beginOffset)->number,
                 $beginOffset,
                 $beginOffset + strlen($fullMatch),
                 $violations,
@@ -114,10 +118,5 @@ final class AttributeOrderSniff extends AbstractSniff implements Fixable
             ),
             $content,
         );
-    }
-
-    private function lineFromOffset(string $content, int $offset): int
-    {
-        return substr_count($content, "\n", 0, $offset) + 1;
     }
 }

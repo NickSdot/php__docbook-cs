@@ -10,6 +10,7 @@ use DocbookCS\Fix\Fixer\AttributeOrderFixer;
 use DocbookCS\Fix\FixResult;
 use DocbookCS\Runner\RunMode;
 use DocbookCS\Sniff\AttributeOrderSniff;
+use DocbookCS\Source\File;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -29,11 +30,11 @@ final class AttributeOrderFixerTest extends TestCase
     {
         $content = '<root xmlns="urn:test" xml:id="root"/>';
         $document = $this->createDocument($content);
+        $source = new File('file.xml', $content);
 
         $violations = new AttributeOrderSniff(RunMode::Fix)->process(
             $document,
-            $content,
-            'file.xml',
+            $source,
         );
 
         $beginOffset = (int) strpos($content, '<root');
@@ -47,9 +48,9 @@ final class AttributeOrderFixerTest extends TestCase
 
         $fix = new AttributeOrderFixer()->process($violations[0]);
 
-        $result = new FixApplier()->apply($content, [$fix]);
+        $result = new FixApplier()->apply($source, [$fix]);
 
-        self::assertSame('<root xml:id="root" xmlns="urn:test"/>', $result->content);
+        self::assertSame('<root xml:id="root" xmlns="urn:test"/>', $result->file->content);
         self::assertSame(1, $result->applied);
     }
 

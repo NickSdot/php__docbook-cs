@@ -21,6 +21,7 @@ use DocbookCS\Runner\RunMode;
 use DocbookCS\Runner\RunOptions;
 use DocbookCS\Runner\XmlFileProcessor;
 use DocbookCS\Sniff\SniffInterface;
+use DocbookCS\Source\File;
 use DocbookCS\Violation\Severity;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -104,6 +105,82 @@ final class SniffRunnerTest extends TestCase
     }
 
     #[Test]
+    public function itReportsFilesThatBecomeUnreadableBeforeProcessing(): void
+    {
+        $filePath = tempnam(sys_get_temp_dir(), 'docbook-cs-');
+        self::assertIsString($filePath);
+        $xmlFilePath = $filePath . '.xml';
+        rename($filePath, $xmlFilePath);
+        file_put_contents($xmlFilePath, '<root/>');
+
+        $progress = new class ($xmlFilePath) implements ProgressInterface {
+            public function __construct(private string $filePath)
+            {
+            }
+
+            public function start(int $totalFiles): void
+            {
+                @unlink($this->filePath);
+            }
+
+            public function advance(int $current, string $filePath, int $violations): void
+            {
+            }
+
+            public function finish(): void
+            {
+            }
+        };
+        $config = new ConfigData(
+            projectRoots: [],
+            sniffs: [],
+            includePaths: [$xmlFilePath],
+            excludePatterns: [],
+            entityPaths: [],
+            basePath: dirname($xmlFilePath),
+        );
+
+        $report = new RunCoordinator($progress)->run($config);
+
+        self::assertTrue($report->hasViolations());
+        self::assertSame('DocbookCS.Internal', $report->getAllViolations()[0]->sniffCode);
+        self::assertStringContainsString('Could not read file', $report->getAllViolations()[0]->message);
+    }
+
+    #[Test]
+    public function itKeepsUnreadableFileErrorsInDiffRuns(): void
+    {
+        $filePath = tempnam(sys_get_temp_dir(), 'docbook-cs-');
+        self::assertIsString($filePath);
+        $xmlFilePath = $filePath . '.xml';
+        rename($filePath, $xmlFilePath);
+        file_put_contents($xmlFilePath, '<root/>');
+
+        $progress = $this->createMock(ProgressInterface::class);
+        $progress->expects($this->once())->method('start')->willReturnCallback(
+            static function () use ($xmlFilePath): void {
+                @unlink($xmlFilePath);
+            },
+        );
+        $progress->expects($this->once())->method('advance');
+        $progress->expects($this->once())->method('finish');
+        $config = new ConfigData(
+            projectRoots: [],
+            sniffs: [],
+            includePaths: [$xmlFilePath],
+            excludePatterns: [],
+            entityPaths: [],
+            basePath: dirname($xmlFilePath),
+        );
+        $diff = new Diff([new FileChange($xmlFilePath, [42])]);
+
+        $report = new RunCoordinator($progress)->run($config, new RunOptions(diff: $diff));
+
+        self::assertTrue($report->hasViolations());
+        self::assertSame('DocbookCS.Internal', $report->getAllViolations()[0]->sniffCode);
+    }
+
+    #[Test]
     public function itAddsFileReportsForFilesWithViolations(): void
     {
         $sniff = new class (RunMode::Sniff) implements SniffInterface {
@@ -116,12 +193,12 @@ final class SniffRunnerTest extends TestCase
                 return 'Test.ViolatingSniff';
             }
 
-            public function process(\DOMDocument $document, string $content, string $filePath): array
+            public function process(\DOMDocument $document, File $source): array
             {
                 return [
                     new Violation(
                         sniffCode: 'Test.ViolatingSniff',
-                        filePath: $filePath,
+                        filePath: $source->path,
                         line: 1,
                         beginOffset: 0,
                         untilOffset: 0,
@@ -147,7 +224,7 @@ final class SniffRunnerTest extends TestCase
     }
 
     #[Test]
-    public function itStoresRelativePathsInFileReports(): void
+    public function itStoresAbsolutePathsInFileReports(): void
     {
         $sniff = new class (RunMode::Sniff) implements SniffInterface {
             public function __construct(public RunMode $mode)
@@ -159,12 +236,12 @@ final class SniffRunnerTest extends TestCase
                 return 'Test.ViolatingSniff';
             }
 
-            public function process(\DOMDocument $document, string $content, string $filePath): array
+            public function process(\DOMDocument $document, File $source): array
             {
                 return [
                     new Violation(
                         sniffCode: 'Test.ViolatingSniff',
-                        filePath: $filePath,
+                        filePath: $source->path,
                         line: 1,
                         beginOffset: 0,
                         untilOffset: 0,
@@ -185,9 +262,9 @@ final class SniffRunnerTest extends TestCase
         $report = $runner->run($config);
 
         foreach ($report->getFileReports() as $fileReport) {
-            self::assertFalse(
+            self::assertTrue(
                 str_starts_with($fileReport->filePath, '/'),
-                'Expected relative path, got: ' . $fileReport->filePath,
+                'Expected absolute path, got: ' . $fileReport->filePath,
             );
         }
     }
@@ -214,7 +291,7 @@ final class SniffRunnerTest extends TestCase
                 return 'Test.ConfigurableSniff';
             }
 
-            public function process(\DOMDocument $document, string $content, string $filePath): array
+            public function process(\DOMDocument $document, File $source): array
             {
                 return [];
             }
@@ -317,12 +394,12 @@ final class SniffRunnerTest extends TestCase
                 return 'Test.ViolatingSniff';
             }
 
-            public function process(\DOMDocument $document, string $content, string $filePath): array
+            public function process(\DOMDocument $document, File $source): array
             {
                 return [
                     new Violation(
                         sniffCode: 'Test.ViolatingSniff',
-                        filePath: $filePath,
+                        filePath: $source->path,
                         line: 1,
                         beginOffset: 0,
                         untilOffset: 0,

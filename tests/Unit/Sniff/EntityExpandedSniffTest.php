@@ -9,6 +9,7 @@ use DocbookCS\Runner\EntityPreprocessor;
 use DocbookCS\Sniff\AbstractSniff;
 use DocbookCS\Sniff\ExceptionNameSniff;
 use DocbookCS\Sniff\SimparaSniff;
+use DocbookCS\Source\File;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -26,7 +27,7 @@ final class EntityExpandedSniffTest extends TestCase
         $source = '<root><para/><para>Source</para>&expanded;</root>';
         $document = $this->processedDocument($source, '<para>Expanded</para>');
 
-        $violations = new SimparaSniff()->process($document, $source, 'file.xml');
+        $violations = new SimparaSniff()->process($document, new File('file.xml', $source));
 
         self::assertCount(1, $violations);
         self::assertSame('<para>Source</para>', $violations[0]->content);
@@ -41,7 +42,7 @@ final class EntityExpandedSniffTest extends TestCase
             '<classname>ExpandedException</classname>',
         );
 
-        $violations = new ExceptionNameSniff()->process($document, $source, 'file.xml');
+        $violations = new ExceptionNameSniff()->process($document, new File('file.xml', $source));
 
         self::assertCount(1, $violations);
         self::assertSame('<classname>RuntimeException</classname>', $violations[0]->content);

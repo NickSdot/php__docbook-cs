@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DocbookCS\Tests\Unit\Sniff;
 
 use DocbookCS\Sniff\WhitespaceSniff;
+use DocbookCS\Source\File;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -30,7 +31,7 @@ final class WhitespaceSniffTest extends TestCase
             "</root>";
 
         $doc = $this->createDocument($content);
-        $violations = (new WhitespaceSniff())->process($doc, $content, 'file.xml');
+        $violations = (new WhitespaceSniff())->process($doc, new File('file.xml', $content));
 
         self::assertSame([], $violations);
     }
@@ -42,7 +43,7 @@ final class WhitespaceSniffTest extends TestCase
             "</root>";
 
         $doc = $this->createDocument($content);
-        $violations = (new WhitespaceSniff())->process($doc, $content, 'file.xml');
+        $violations = (new WhitespaceSniff())->process($doc, new File('file.xml', $content));
 
         self::assertCount(1, $violations);
         self::assertSame('Trailing whitespace detected.', $violations[0]->message);
@@ -60,7 +61,7 @@ final class WhitespaceSniffTest extends TestCase
             "</root>";
 
         $doc = $this->createDocument($content);
-        $violations = (new WhitespaceSniff())->process($doc, $content, 'file.xml');
+        $violations = (new WhitespaceSniff())->process($doc, new File('file.xml', $content));
 
         self::assertCount(1, $violations);
         self::assertSame('Mixed tabs and spaces in indentation.', $violations[0]->message);
@@ -78,7 +79,7 @@ final class WhitespaceSniffTest extends TestCase
             "</root>";
 
         $doc = $this->createDocument($content);
-        $violations = (new WhitespaceSniff())->process($doc, $content, 'file.xml');
+        $violations = (new WhitespaceSniff())->process($doc, new File('file.xml', $content));
 
         self::assertCount(1, $violations);
         self::assertSame('Mixed tabs and spaces in indentation.', $violations[0]->message);
@@ -92,7 +93,7 @@ final class WhitespaceSniffTest extends TestCase
             "</root>";
 
         $doc = $this->createDocument($content);
-        $violations = (new WhitespaceSniff())->process($doc, $content, 'file.xml');
+        $violations = (new WhitespaceSniff())->process($doc, new File('file.xml', $content));
 
         self::assertCount(1, $violations);
         self::assertSame('Mixed tabs and spaces in indentation.', $violations[0]->message);
@@ -107,7 +108,7 @@ final class WhitespaceSniffTest extends TestCase
             "</root>";
 
         $doc = $this->createDocument($content);
-        $violations = (new WhitespaceSniff())->process($doc, $content, 'file.xml');
+        $violations = (new WhitespaceSniff())->process($doc, new File('file.xml', $content));
 
         self::assertCount(3, $violations);
     }
@@ -119,7 +120,7 @@ final class WhitespaceSniffTest extends TestCase
             "</root>";
 
         $doc = $this->createDocument($content);
-        $violations = (new WhitespaceSniff())->process($doc, $content, 'my-file.xml');
+        $violations = (new WhitespaceSniff())->process($doc, new File('my-file.xml', $content));
 
         self::assertCount(1, $violations);
         self::assertSame('my-file.xml', $violations[0]->filePath);

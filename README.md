@@ -40,6 +40,7 @@ Implement `DocbookCS\Sniff\SniffInterface` (or extend `AbstractSniff`):
 namespace Acme\DocbookSniffs;
 
 use DocbookCS\Sniff\AbstractSniff;
+use DocbookCS\Source\File;
 
 final class MySniff extends AbstractSniff
 {
@@ -48,7 +49,7 @@ final class MySniff extends AbstractSniff
         return 'Acme.MySniff';
     }
 
-    public function process(\DOMDocument $document, string $content, string $filePath): array
+    public function process(\DOMDocument $document, File $file): array
     {
         $violations = [];
         // ... inspect $document, add violations via $this->createViolation(...)

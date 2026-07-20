@@ -12,8 +12,12 @@ use DocbookCS\Path\PathLoader;
 use DocbookCS\Path\PathMatcher;
 use DocbookCS\Progress\NullProgress;
 use DocbookCS\Progress\ProgressInterface;
+use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
 use DocbookCS\Sniff\SniffInterface;
+use DocbookCS\Source\File;
+use DocbookCS\Violation\Severity;
+use DocbookCS\Violation\Violation;
 
 final class RunCoordinator
 {
@@ -62,13 +66,34 @@ final class RunCoordinator
         $this->progress->start($total);
 
         $index = 0;
-        foreach ($targets as $file => $changedLines) {
+        foreach ($targets as $filePath => $fileChange) {
             $report->incrementFilesScanned();
 
-            $fileReport = $processor->processFile(
-                $file,
-                $changedLines,
-            );
+            $content = @file_get_contents($filePath);
+
+            if ($content === false) {
+                $fileReport = new FileReport($filePath);
+                $fileReport->addViolation(new Violation(
+                    sniffCode: 'DocbookCS.Internal',
+                    filePath: $filePath,
+                    line: 0,
+                    beginOffset: 0,
+                    untilOffset: 0,
+                    message: 'Could not read file.',
+                    severity: Severity::ERROR,
+                ));
+            } else {
+                $file = new File($filePath, $content);
+                $result = $processor->process($file, $fileChange);
+                $fileReport = $result->fileReport;
+
+                if (
+                    $result->hasPendingFixesToPersist()
+                    && @file_put_contents($filePath, $result->fixedContent()) === false
+                ) {
+                    throw FixerException::cannotPersist($filePath);
+                }
+            }
 
             $violationCount = $fileReport->getViolationCount();
 
@@ -76,7 +101,7 @@ final class RunCoordinator
                 $report->addFileReport($fileReport);
             }
 
-            $this->progress->advance(++$index, $file, $violationCount);
+            $this->progress->advance(++$index, $filePath, $violationCount);
         }
 
         $this->progress->finish();

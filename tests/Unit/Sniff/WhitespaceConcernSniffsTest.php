@@ -5,15 +5,17 @@ declare(strict_types=1);
 namespace DocbookCS\Tests\Unit\Sniff;
 
 use DocbookCS\Sniff\MixedIndentationSniff;
-use DocbookCS\Source\SourceLines;
 use DocbookCS\Sniff\TrailingWhitespaceSniff;
+use DocbookCS\Source\File;
+use DocbookCS\Source\Line;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(MixedIndentationSniff::class)]
-#[CoversClass(SourceLines::class)]
+#[CoversClass(File::class)]
+#[CoversClass(Line::class)]
 #[CoversClass(TrailingWhitespaceSniff::class)]
 #[CoversClass(Violation::class)]
 final class WhitespaceConcernSniffsTest extends TestCase
@@ -24,8 +26,7 @@ final class WhitespaceConcernSniffsTest extends TestCase
         $content = "<root>  \r\n</root>";
         $violations = new TrailingWhitespaceSniff()->process(
             $this->createDocument($content),
-            $content,
-            'file.xml',
+            new File('file.xml', $content),
         );
 
         self::assertCount(1, $violations);
@@ -44,8 +45,7 @@ final class WhitespaceConcernSniffsTest extends TestCase
         $lineOffset = strlen("<root>\n");
         $violations = new MixedIndentationSniff()->process(
             $this->createDocument($content),
-            $content,
-            'file.xml',
+            new File('file.xml', $content),
         );
 
         self::assertCount(1, $violations);
@@ -63,8 +63,9 @@ final class WhitespaceConcernSniffsTest extends TestCase
         $content = "<root>\n \t<tag/>  \n</root>";
         $document = $this->createDocument($content);
 
-        $indentation = new MixedIndentationSniff()->process($document, $content, 'file.xml')[0];
-        $trailing = new TrailingWhitespaceSniff()->process($document, $content, 'file.xml')[0];
+        $source = new File('file.xml', $content);
+        $indentation = new MixedIndentationSniff()->process($document, $source)[0];
+        $trailing = new TrailingWhitespaceSniff()->process($document, $source)[0];
 
         self::assertSame(2, $indentation->line);
         self::assertSame(2, $trailing->line);

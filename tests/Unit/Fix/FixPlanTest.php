@@ -8,6 +8,7 @@ use DocbookCS\Fix\Fix;
 use DocbookCS\Fix\FixApplier;
 use DocbookCS\Fix\FixPlan;
 use DocbookCS\Fix\FixResult;
+use DocbookCS\Source\File;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -22,14 +23,15 @@ final class FixPlanTest extends TestCase
     public function itAppliesEveryFixInAPlanAtomically(): void
     {
         $content = '<para>x</para>';
+        $source = new File('file.xml', $content);
         $plan = new FixPlan(
             new Fix('file.xml', 1, 5, 'simpara', 'Sniff', 1, 'para'),
             new Fix('file.xml', 9, 13, 'simpara', 'Sniff', 1, 'para'),
         );
 
-        $result = new FixApplier()->apply($content, [$plan]);
+        $result = new FixApplier()->apply($source, [$plan]);
 
-        self::assertSame('<simpara>x</simpara>', $result->content);
+        self::assertSame('<simpara>x</simpara>', $result->file->content);
         self::assertSame(1, $result->applied);
         self::assertSame(0, $result->skipped);
     }
@@ -38,15 +40,16 @@ final class FixPlanTest extends TestCase
     public function itAllowsAnIndependentFixBetweenAPlanRanges(): void
     {
         $content = '<para>x</para>';
+        $source = new File('file.xml', $content);
         $plan = new FixPlan(
             new Fix('file.xml', 1, 5, 'simpara', 'ElementSniff', 1, 'para'),
             new Fix('file.xml', 9, 13, 'simpara', 'ElementSniff', 1, 'para'),
         );
         $textFix = new Fix('file.xml', 6, 7, 'y', 'TextSniff', 1, 'x');
 
-        $result = new FixApplier()->apply($content, [$plan, $textFix]);
+        $result = new FixApplier()->apply($source, [$plan, $textFix]);
 
-        self::assertSame('<simpara>y</simpara>', $result->content);
+        self::assertSame('<simpara>y</simpara>', $result->file->content);
         self::assertSame(2, $result->applied);
         self::assertSame(0, $result->skipped);
     }
@@ -55,14 +58,15 @@ final class FixPlanTest extends TestCase
     public function itSkipsAWholePlanWhenOneRangeIsStale(): void
     {
         $content = '<para>x</parb>';
+        $source = new File('file.xml', $content);
         $plan = new FixPlan(
             new Fix('file.xml', 1, 5, 'simpara', 'Sniff', 1, 'para'),
             new Fix('file.xml', 9, 13, 'simpara', 'Sniff', 1, 'para'),
         );
 
-        $result = new FixApplier()->apply($content, [$plan]);
+        $result = new FixApplier()->apply($source, [$plan]);
 
-        self::assertSame($content, $result->content);
+        self::assertSame($content, $result->file->content);
         self::assertSame(0, $result->applied);
         self::assertSame(1, $result->skipped);
     }
@@ -71,16 +75,31 @@ final class FixPlanTest extends TestCase
     public function itSkipsAWholePlanWhenOneRangeConflicts(): void
     {
         $content = '<para>x</para>';
+        $source = new File('file.xml', $content);
         $openingTagFix = new Fix('file.xml', 1, 5, 'other', 'FirstSniff', 1, 'para');
         $plan = new FixPlan(
             new Fix('file.xml', 1, 5, 'simpara', 'SecondSniff', 1, 'para'),
             new Fix('file.xml', 9, 13, 'simpara', 'SecondSniff', 1, 'para'),
         );
 
-        $result = new FixApplier()->apply($content, [$openingTagFix, $plan]);
+        $result = new FixApplier()->apply($source, [$openingTagFix, $plan]);
 
-        self::assertSame('<other>x</para>', $result->content);
+        self::assertSame('<other>x</para>', $result->file->content);
         self::assertSame(1, $result->applied);
+        self::assertSame(1, $result->skipped);
+    }
+
+    #[Test]
+    public function itSkipsFixesForAnotherSource(): void
+    {
+        $content = '<para>x</para>';
+        $source = new File('file.xml', $content);
+        $fix = new Fix('other.xml', 1, 5, 'simpara', 'Sniff', 1, 'para');
+
+        $result = new FixApplier()->apply($source, [$fix]);
+
+        self::assertSame($content, $result->file->content);
+        self::assertSame(0, $result->applied);
         self::assertSame(1, $result->skipped);
     }
 }

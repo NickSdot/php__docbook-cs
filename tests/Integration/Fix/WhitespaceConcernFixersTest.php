@@ -12,6 +12,7 @@ use DocbookCS\Fix\FixResult;
 use DocbookCS\Runner\RunMode;
 use DocbookCS\Sniff\MixedIndentationSniff;
 use DocbookCS\Sniff\TrailingWhitespaceSniff;
+use DocbookCS\Source\File;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -31,16 +32,15 @@ final class WhitespaceConcernFixersTest extends TestCase
         $content = "<root> \n \t<tag/>  \n</root>";
         $document = new \DOMDocument();
         $document->loadXML($content);
+        $source = new File('file.xml', $content);
 
         $trailingViolations = new TrailingWhitespaceSniff(RunMode::Fix)->process(
             $document,
-            $content,
-            'file.xml',
+            $source,
         );
         $indentationViolations = new MixedIndentationSniff(RunMode::Fix)->process(
             $document,
-            $content,
-            'file.xml',
+            $source,
         );
 
         self::assertCount(2, $trailingViolations);
@@ -57,9 +57,9 @@ final class WhitespaceConcernFixersTest extends TestCase
             $fixes[] = $indentationFixer->process($violation);
         }
 
-        $result = new FixApplier()->apply($content, $fixes);
+        $result = new FixApplier()->apply($source, $fixes);
 
-        self::assertSame("<root>\n  <tag/>\n</root>", $result->content);
+        self::assertSame("<root>\n  <tag/>\n</root>", $result->file->content);
         self::assertSame(3, $result->applied);
         self::assertSame(0, $result->skipped);
     }

@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace DocbookCS\Tests\Integration\Runner;
 
+use DocbookCS\Diff\FileChange;
 use DocbookCS\Runner\RunMode;
 use DocbookCS\Runner\SourceScope;
 use DocbookCS\Runner\XmlFileProcessor;
 use DocbookCS\Sniff\SimparaSniff;
+use DocbookCS\Source\File;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -43,7 +45,12 @@ XML;
                 new SimparaSniff(RunMode::Fix),
             ]);
 
-            $report = $processor->processFile($filePath, [3]);
+            $result = $processor->process(
+                new File($filePath, $source),
+                new FileChange($filePath, [3]),
+            );
+            file_put_contents($filePath, $result->fixedContent());
+            $report = $result->fileReport;
 
             self::assertSame($expected, file_get_contents($filePath));
             self::assertFalse($report->hasViolations());

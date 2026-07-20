@@ -6,6 +6,7 @@ namespace DocbookCS\Tests\Unit\Sniff;
 
 use DocbookCS\Sniff\ExceptionNameSniff;
 use DocbookCS\Sniff\SimparaSniff;
+use DocbookCS\Source\File;
 use DocbookCS\Violation\SourceRange;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -20,7 +21,10 @@ final class AffectedRangesTest extends TestCase
     public function simparaIdentifiesBothElementNamesWithoutChangingTheFinding(): void
     {
         $content = "<root>\n<para>Text</para>\n</root>";
-        $violation = new SimparaSniff()->process($this->document($content), $content, 'file.xml')[0];
+        $violation = new SimparaSniff()->process(
+            $this->document($content),
+            new File('file.xml', $content),
+        )[0];
 
         self::assertSame('<para>Text</para>', $violation->content);
         self::assertSame((int) strpos($content, '<para>'), $violation->beginOffset);
@@ -34,7 +38,10 @@ final class AffectedRangesTest extends TestCase
     public function exceptionNameIdentifiesElementNamesOnDifferentLines(): void
     {
         $content = "<root>\n<classname>RuntimeException\n</classname>\n</root>";
-        $violation = new ExceptionNameSniff()->process($this->document($content), $content, 'file.xml')[0];
+        $violation = new ExceptionNameSniff()->process(
+            $this->document($content),
+            new File('file.xml', $content),
+        )[0];
 
         self::assertSame("<classname>RuntimeException\n</classname>", $violation->content);
         self::assertEquals([

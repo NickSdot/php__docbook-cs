@@ -4,18 +4,16 @@ declare(strict_types=1);
 
 namespace DocbookCS\Fix;
 
+use DocbookCS\Source\File;
+
 final readonly class FixResult
 {
-    /** @var list<Fix> */
-    public array $appliedFixes;
-
     /** @param list<Fix> $appliedFixes */
     public function __construct(
-        public string $content,
+        public File $file,
         public int $applied = 0,
         public int $skipped = 0,
-        array $appliedFixes = [],
+        public array $appliedFixes = [],
     ) {
-        $this->appliedFixes = $appliedFixes;
     }
 }

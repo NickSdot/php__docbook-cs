@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace DocbookCS\Sniff;
 
 use DocbookCS\Fix\Fixer\MixedIndentationFixer;
-use DocbookCS\Source\SourceLines;
+use DocbookCS\Source\File;
 
 final class MixedIndentationSniff extends AbstractSniff implements Fixable
 {
@@ -23,12 +23,12 @@ final class MixedIndentationSniff extends AbstractSniff implements Fixable
     }
 
     /** @throws \LogicException if an invalid severity level is configured */
-    public function process(\DOMDocument $document, string $content, string $filePath): array
+    public function process(\DOMDocument $document, File $file): array
     {
         $violations = [];
 
-        foreach (SourceLines::from($content) as $sourceLine) {
-            if (!preg_match(self::INDENTATION_PATTERN, $sourceLine['content'], $matches)) {
+        foreach ($file->lines() as $line) {
+            if (!preg_match(self::INDENTATION_PATTERN, $line->content, $matches)) {
                 continue;
             }
 
@@ -38,10 +38,10 @@ final class MixedIndentationSniff extends AbstractSniff implements Fixable
             }
 
             $violations[] = $this->createViolation(
-                $filePath,
-                $sourceLine['line'],
-                $sourceLine['beginOffset'],
-                $sourceLine['beginOffset'] + strlen($indentation),
+                $file->path,
+                $line->number,
+                $line->beginOffset,
+                $line->beginOffset + strlen($indentation),
                 self::MESSAGE,
                 $indentation,
             );

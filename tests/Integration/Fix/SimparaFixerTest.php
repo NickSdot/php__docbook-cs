@@ -10,6 +10,7 @@ use DocbookCS\Fix\Fixer\SimparaFixer;
 use DocbookCS\Fix\FixResult;
 use DocbookCS\Runner\RunMode;
 use DocbookCS\Sniff\SimparaSniff;
+use DocbookCS\Source\File;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -29,17 +30,18 @@ final class SimparaFixerTest extends TestCase
     {
         $content = '<root><para>Text <emphasis>inline</emphasis></para></root>';
         $document = $this->createDocument($content);
+        $source = new File('file.xml', $content);
 
-        $violations = new SimparaSniff(RunMode::Fix)->process($document, $content, 'file.xml');
+        $violations = new SimparaSniff(RunMode::Fix)->process($document, $source);
 
         self::assertCount(1, $violations);
         self::assertSame('<para>Text <emphasis>inline</emphasis></para>', $violations[0]->content);
 
         $fix = new SimparaFixer()->process($violations[0]);
 
-        $result = new FixApplier()->apply($content, [$fix]);
+        $result = new FixApplier()->apply($source, [$fix]);
 
-        self::assertSame('<root><simpara>Text <emphasis>inline</emphasis></simpara></root>', $result->content);
+        self::assertSame('<root><simpara>Text <emphasis>inline</emphasis></simpara></root>', $result->file->content);
         self::assertSame(1, $result->applied);
     }
 
@@ -48,17 +50,18 @@ final class SimparaFixerTest extends TestCase
     {
         $content = '<root><para xml:id="example">Text</para></root>';
         $document = $this->createDocument($content);
+        $source = new File('file.xml', $content);
 
-        $violations = new SimparaSniff(RunMode::Fix)->process($document, $content, 'file.xml');
+        $violations = new SimparaSniff(RunMode::Fix)->process($document, $source);
 
         self::assertCount(1, $violations);
         self::assertSame('<para xml:id="example">Text</para>', $violations[0]->content);
 
         $fix = new SimparaFixer()->process($violations[0]);
 
-        $result = new FixApplier()->apply($content, [$fix]);
+        $result = new FixApplier()->apply($source, [$fix]);
 
-        self::assertSame('<root><simpara xml:id="example">Text</simpara></root>', $result->content);
+        self::assertSame('<root><simpara xml:id="example">Text</simpara></root>', $result->file->content);
         self::assertSame(1, $result->applied);
     }
 
@@ -67,17 +70,21 @@ final class SimparaFixerTest extends TestCase
     {
         $content = '<root><para>Text<note><para>Inner</para></note></para></root>';
         $document = $this->createDocument($content);
+        $source = new File('file.xml', $content);
 
-        $violations = new SimparaSniff(RunMode::Fix)->process($document, $content, 'file.xml');
+        $violations = new SimparaSniff(RunMode::Fix)->process($document, $source);
 
         self::assertCount(1, $violations);
         self::assertSame('<para>Inner</para>', $violations[0]->content);
 
         $fix = new SimparaFixer()->process($violations[0]);
 
-        $result = new FixApplier()->apply($content, [$fix]);
+        $result = new FixApplier()->apply($source, [$fix]);
 
-        self::assertSame('<root><para>Text<note><simpara>Inner</simpara></note></para></root>', $result->content);
+        self::assertSame(
+            '<root><para>Text<note><simpara>Inner</simpara></note></para></root>',
+            $result->file->content,
+        );
         self::assertSame(1, $result->applied);
     }
 

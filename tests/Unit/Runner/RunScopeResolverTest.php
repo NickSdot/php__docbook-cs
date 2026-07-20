@@ -54,7 +54,8 @@ final class RunScopeResolverTest extends TestCase
             strict: true,
         );
 
-        self::assertSame([$this->sourceFile => [2, 3]], $targets);
+        self::assertSame([2, 3], $targets[$this->sourceFile]?->lineNumbers);
+        self::assertCount(1, $targets);
     }
 
     #[Test]
@@ -68,7 +69,7 @@ final class RunScopeResolverTest extends TestCase
             strict: false,
         );
 
-        self::assertSame([2, 3], $targets[$this->sourceFile]);
+        self::assertSame([2, 3], $targets[$this->sourceFile]?->lineNumbers);
         self::assertNull($targets[$this->targetFile]);
         self::assertCount(2, $targets);
     }

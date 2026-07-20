@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace DocbookCS\Runner;
 
 use DocbookCS\Fix\Fix;
-use DocbookCS\Source\SourceLines;
+use DocbookCS\Source\File;
 use DocbookCS\Violation\Violation;
 
 final readonly class SourceScope
@@ -25,24 +25,70 @@ final readonly class SourceScope
     }
 
     /** @param list<int> $lines */
-    public static function changedLines(string $source, array $lines): self
+    public static function changedLines(File $file, array $lines): self
     {
         $selectedLines = array_fill_keys($lines, true);
         $ranges = [];
 
-        foreach (SourceLines::from($source) as $sourceLine) {
-            if (!isset($selectedLines[$sourceLine['line']])) {
+        foreach ($file->lines() as $line) {
+            if (!isset($selectedLines[$line->number])) {
                 continue;
             }
 
             self::appendRange(
                 $ranges,
-                $sourceLine['beginOffset'],
-                $sourceLine['endOffset'],
+                $line->beginOffset,
+                $line->offsetAfterLine(),
             );
         }
 
         return new self($ranges);
+    }
+
+    public function isWholeFile(): bool
+    {
+        return $this->ranges === null;
+    }
+
+    /** @return list<int> */
+    public function lineNumbers(File $file): array
+    {
+        if ($this->ranges === null) {
+            return array_map(
+                static fn(\DocbookCS\Source\Line $line): int => $line->number,
+                iterator_to_array($file->lines(), false),
+            );
+        }
+
+        $lineNumbers = [];
+        $rangeIndex = 0;
+        $rangeCount = count($this->ranges);
+
+        foreach ($file->lines() as $line) {
+            while (
+                $rangeIndex < $rangeCount
+                && self::endsBefore($this->ranges[$rangeIndex], $line->beginOffset)
+            ) {
+                $rangeIndex++;
+            }
+
+            if ($rangeIndex === $rangeCount) {
+                break;
+            }
+
+            if (
+                self::overlaps(
+                    $this->ranges[$rangeIndex][0],
+                    $this->ranges[$rangeIndex][1],
+                    $line->beginOffset,
+                    $line->offsetAfterLine(),
+                )
+            ) {
+                $lineNumbers[] = $line->number;
+            }
+        }
+
+        return $lineNumbers;
     }
 
     public function includes(Violation $violation): bool
@@ -102,9 +148,16 @@ final readonly class SourceScope
         return new self($ranges);
     }
 
-    /**
-     * @param list<array{int, int}> $ranges
-     */
+    /** @param array{int, int} $range */
+    private static function endsBefore(array $range, int $offset): bool
+    {
+        [$beginOffset, $untilOffset] = $range;
+
+        return $untilOffset < $offset
+            || ($untilOffset === $offset && $beginOffset !== $untilOffset);
+    }
+
+    /** @param list<array{int, int}> $ranges */
     private static function appendRange(array &$ranges, int $beginOffset, int $untilOffset): void
     {
         $lastIndex = count($ranges) - 1;
@@ -133,7 +186,7 @@ final readonly class SourceScope
                 || (!$isInsertion && $fix->untilOffset === $offset)
                 || ($includeInsertionAtOffset && $isInsertion && $fix->beginOffset === $offset)
             ) {
-                $shift += self::delta($fix);
+                $shift += strlen($fix->replacement) - ($fix->untilOffset - $fix->beginOffset);
                 continue;
             }
 
@@ -149,11 +202,6 @@ final readonly class SourceScope
         }
 
         return $offset + $shift;
-    }
-
-    private static function delta(Fix $fix): int
-    {
-        return strlen($fix->replacement) - ($fix->untilOffset - $fix->beginOffset);
     }
 
     private static function overlaps(
