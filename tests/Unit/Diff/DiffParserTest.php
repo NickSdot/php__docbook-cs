@@ -22,7 +22,7 @@ final class DiffParserTest extends TestCase
     #[Test]
     public function itReturnsEmptyArrayForEmptyDiff(): void
     {
-        self::assertSame([], $this->parser->parse(''));
+        self::assertNull($this->parser->parse('')->changeFor('file.xml'));
     }
 
     #[Test]
@@ -41,8 +41,7 @@ DIFF;
 
         $result = $this->parser->parse($diff);
 
-        self::assertArrayHasKey('reference/file.xml', $result);
-        self::assertSame([2], $result['reference/file.xml']);
+        self::assertSame([2], $result->changeFor('reference/file.xml')?->lineNumbers);
     }
 
     #[Test]
@@ -62,7 +61,7 @@ DIFF;
 
         $result = $this->parser->parse($diff);
 
-        self::assertSame([6, 7], $result['doc/chapter.xml']);
+        self::assertSame([6, 7], $result->changeFor('doc/chapter.xml')?->lineNumbers);
     }
 
     #[Test]
@@ -79,8 +78,7 @@ DIFF;
 
         $result = $this->parser->parse($diff);
 
-        self::assertArrayHasKey('src/file.xml', $result);
-        self::assertArrayNotHasKey('b/src/file.xml', $result);
+        self::assertSame('src/file.xml', $result->changeFor('src/file.xml')?->filePath);
     }
 
     #[Test]
@@ -97,7 +95,7 @@ deleted file mode 100644
 -line3
 DIFF;
 
-        self::assertSame([], $this->parser->parse($diff));
+        self::assertNull($this->parser->parse($diff)->changeFor('removed.xml'));
     }
 
     #[Test]
@@ -116,8 +114,7 @@ DIFF;
 
         $result = $this->parser->parse($diff);
 
-        self::assertArrayHasKey('new.xml', $result);
-        self::assertSame([1, 2, 3], $result['new.xml']);
+        self::assertSame([1, 2, 3], $result->changeFor('new.xml')?->lineNumbers);
     }
 
     #[Test]
@@ -142,10 +139,8 @@ DIFF;
 
         $result = $this->parser->parse($diff);
 
-        self::assertArrayHasKey('first.xml', $result);
-        self::assertArrayHasKey('second.xml', $result);
-        self::assertSame([2], $result['first.xml']);
-        self::assertSame([2], $result['second.xml']);
+        self::assertSame([2], $result->changeFor('first.xml')?->lineNumbers);
+        self::assertSame([2], $result->changeFor('second.xml')?->lineNumbers);
     }
 
     #[Test]
@@ -165,8 +160,7 @@ DIFF;
         $result = $this->parser->parse($diff);
 
         // No lines added, so the changed set is empty (not absent — the file is tracked).
-        self::assertArrayHasKey('file.xml', $result);
-        self::assertSame([], $result['file.xml']);
+        self::assertSame([], $result->changeFor('file.xml')?->lineNumbers);
     }
 
     #[Test]
@@ -185,7 +179,7 @@ DIFF;
 
         $result = $this->parser->parse($diff);
 
-        self::assertSame([1, 2], $result['file.xml']);
+        self::assertSame([1, 2], $result->changeFor('file.xml')?->lineNumbers);
     }
 
     #[Test]
@@ -209,7 +203,7 @@ DIFF;
 
         $result = $this->parser->parse($diff);
 
-        self::assertSame([2, 12], $result['file.xml']);
+        self::assertSame([2, 12], $result->changeFor('file.xml')?->lineNumbers);
     }
 
     #[Test]
@@ -225,6 +219,6 @@ DIFF;
 
         $result = $this->parser->parse($diff);
 
-        self::assertSame([1], $result['file.xml']);
+        self::assertSame([1], $result->changeFor('file.xml')?->lineNumbers);
     }
 }

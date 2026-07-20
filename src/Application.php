@@ -85,12 +85,12 @@ final class Application
             $overridePaths = $this->resolveOverridePaths($overridePaths);
         }
 
-        $diffLines = null;
+        $diff = null;
 
         if ($options['diff'] !== null) {
             try {
                 $diffContent = $this->readDiff($options['diff']);
-                $diffLines = (new DiffParser())->parse($diffContent);
+                $diff = (new DiffParser())->parse($diffContent);
             } catch (\Throwable $e) {
                 $this->writeError('Error reading diff: ' . $e->getMessage() . PHP_EOL);
 
@@ -103,7 +103,7 @@ final class Application
         $runOptions = new RunOptions(
             mode: RunMode::fromFixFlag($options['fix']),
             overridePaths: $overridePaths,
-            diffLines: $diffLines,
+            diff: $diff,
             strict: $options['strict'],
         );
 

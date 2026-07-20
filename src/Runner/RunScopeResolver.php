@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DocbookCS\Runner;
 
+use DocbookCS\Diff\Diff;
 use DocbookCS\Path\PathMatcher;
 
 final readonly class RunScopeResolver
@@ -19,22 +20,21 @@ final readonly class RunScopeResolver
 
     /**
      * @param list<string> $files
-     * @param array<string, list<int>>|null $diffLines
      * @return array<string, list<int>|null>
      */
-    public function resolve(array $files, ?array $diffLines, bool $strict): array
+    public function resolve(array $files, ?Diff $diff, bool $strict): array
     {
         $targets = [];
 
         foreach ($files as $file) {
-            if ($diffLines === null) {
+            if ($diff === null) {
                 $targets[$file] = null;
                 continue;
             }
 
-            $changedLines = $this->changedLinesForFile($file, $diffLines);
-            if ($changedLines !== null) {
-                $targets[$file] = $changedLines;
+            $fileChange = $diff->changeFor($file);
+            if ($fileChange !== null) {
+                $targets[$file] = $fileChange->lineNumbers;
             }
         }
 
@@ -127,27 +127,5 @@ final readonly class RunScopeResolver
         return $content !== false
             ? $this->targetFilesFromContent($content, $visited)
             : [];
-    }
-
-    /**
-     * @param array<string, list<int>> $diffLines
-     * @return list<int>|null
-     */
-    private function changedLinesForFile(string $absolutePath, array $diffLines): ?array
-    {
-        $normalized = str_replace('\\', '/', $absolutePath);
-
-        foreach ($diffLines as $diffPath => $lines) {
-            $normalizedDiff = str_replace('\\', '/', $diffPath);
-
-            if (
-                $normalized === $normalizedDiff
-                || str_ends_with($normalized, '/' . ltrim($normalizedDiff, '/'))
-            ) {
-                return $lines;
-            }
-        }
-
-        return null;
     }
 }

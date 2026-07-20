@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace DocbookCS\Tests\Unit\Runner;
 
+use DocbookCS\Diff\Diff;
+use DocbookCS\Diff\FileChange;
 use DocbookCS\Path\PathMatcher;
 use DocbookCS\Runner\RunScopeResolver;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -48,7 +50,7 @@ final class RunScopeResolverTest extends TestCase
 
         $targets = $resolver->resolve(
             [$this->sourceFile],
-            ['source.xml' => [2, 3]],
+            new Diff([new FileChange('source.xml', [2, 3])]),
             strict: true,
         );
 
@@ -62,7 +64,7 @@ final class RunScopeResolverTest extends TestCase
 
         $targets = $resolver->resolve(
             [$this->sourceFile],
-            ['source.xml' => [2, 3]],
+            new Diff([new FileChange('source.xml', [2, 3])]),
             strict: false,
         );
 

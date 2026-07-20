@@ -49,7 +49,7 @@ final class RunCoordinator
 
         $targets = new RunScopeResolver($matcher, $entityResolver->paths())->resolve(
             $files,
-            $options->diffLines,
+            $options->diff,
             $options->strict,
         );
 
