@@ -7,6 +7,7 @@ namespace DocbookCS\Runner;
 use DocbookCS\Config\ConfigData;
 use DocbookCS\Diff\Diff;
 use DocbookCS\Diff\DiffParser;
+use DocbookCS\Diff\DiffProviderInterface;
 use DocbookCS\Diff\GitDiffProvider;
 use DocbookCS\Path\EntityResolver;
 
@@ -14,15 +15,15 @@ final readonly class RunPlanner
 {
     private EntityResolver $entityResolver;
 
-    private GitDiffProvider $gitDiffProvider;
+    private DiffProviderInterface $diffProvider;
 
     public function __construct(
         private ConfigData $config,
         private RunMode $mode = RunMode::Sniff,
         private bool $wide = false,
-        ?GitDiffProvider $gitDiffProvider = null,
+        ?DiffProviderInterface $diffProvider = null,
     ) {
-        $this->gitDiffProvider = $gitDiffProvider ?? new GitDiffProvider();
+        $this->diffProvider = $diffProvider ?? new GitDiffProvider();
 
         $this->entityResolver = new EntityResolver(
             $config->getProjectRoots(),
@@ -39,7 +40,7 @@ final readonly class RunPlanner
     public function plan(array $paths, ?string $pipedDiff): RunPlan
     {
         if ($paths === []) {
-            return $this->planDiff(new DiffParser()->parse($pipedDiff ?? $this->gitDiffProvider->for(getcwd() ?: '.')));
+            return $this->planDiff(new DiffParser()->parse($pipedDiff ?? $this->diffProvider->for(getcwd() ?: '.')));
         }
 
         if ($pipedDiff !== null) {

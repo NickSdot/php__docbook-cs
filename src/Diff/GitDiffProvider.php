@@ -4,39 +4,36 @@ declare(strict_types=1);
 
 namespace DocbookCS\Diff;
 
-final class GitDiffProvider
-{
-    /** @var \Closure(list<string>, string): array{exitCode: int, stdout: string, stderr: string} */
-    private \Closure $execute;
+use DocbookCS\Process\NativeProcessRunner;
+use DocbookCS\Process\ProcessRunnerInterface;
 
-    /**
-     * @param null|\Closure(list<string>, string): array{exitCode: int, stdout: string, stderr: string} $execute
-     */
-    public function __construct(?\Closure $execute = null)
-    {
-        $this->execute = $execute ?? $this->executeCommand(...);
+final readonly class GitDiffProvider implements DiffProviderInterface
+{
+    public function __construct(
+        private ProcessRunnerInterface $processRunner = new NativeProcessRunner(),
+    ) {
     }
 
     /** @throws \RuntimeException if the repository, branch point, or diff cannot be determined. */
-    public function for(string $pwd): string
+    public function for(string $workingDirectory): string
     {
-        $repositoryRoot = trim($this->commandOutput(
+        $repositoryRoot = trim($this->runOrThrow(
             ['git', 'rev-parse', '--show-toplevel'],
-            $pwd,
-            'Could not find Git repository.'
+            $workingDirectory,
+            'Could not find Git repository.',
         ));
 
         $baseReference = $this->resolveBaseReference($repositoryRoot);
 
         $error = sprintf('Unclear where HEAD branched from %s.', $baseReference);
 
-        $mergeBase = trim($this->commandOutput(
+        $mergeBase = trim($this->runOrThrow(
             ['git', 'merge-base', 'HEAD', $baseReference],
             $repositoryRoot,
             $error,
         ));
 
-        return $this->commandOutput(
+        return $this->runOrThrow(
             ['git', 'diff', '--no-ext-diff', '--no-color', $mergeBase, '--'],
             $repositoryRoot,
             'Could not read diff.',
@@ -49,13 +46,13 @@ final class GitDiffProvider
         $candidates = [];
 
         foreach (['upstream', 'origin'] as $remote) {
-            $result = ($this->execute)(
+            $result = $this->processRunner->run(
                 ['git', 'symbolic-ref', '--quiet', sprintf('refs/remotes/%s/HEAD', $remote)],
                 $repositoryRoot,
             );
 
-            if ($result['exitCode'] === 0) {
-                $candidates[] = trim($result['stdout']);
+            if ($result->exitCode === 0) {
+                $candidates[] = trim($result->stdout);
             }
 
             $candidates[] = sprintf('refs/remotes/%s/main', $remote);
@@ -66,12 +63,12 @@ final class GitDiffProvider
         $candidates[] = 'refs/heads/master';
 
         foreach (array_unique($candidates) as $candidate) {
-            $result = ($this->execute)(
+            $result = $this->processRunner->run(
                 ['git', 'rev-parse', '--verify', '--quiet', $candidate . '^{commit}'],
                 $repositoryRoot,
             );
 
-            if ($result['exitCode'] === 0) {
+            if ($result->exitCode === 0) {
                 return $candidate;
             }
         }
@@ -82,57 +79,21 @@ final class GitDiffProvider
     }
 
     /**
-     * @param list<string> $cmd
-     *
+     * @param list<string> $command
      * @throws \RuntimeException if the command fails.
      */
-    private function commandOutput(array $cmd, string $pwd, string $error): string
+    private function runOrThrow(array $command, string $workingDirectory, string $error): string
     {
-        $result = ($this->execute)($cmd, $pwd);
+        $result = $this->processRunner->run($command, $workingDirectory);
 
-        if ($result['exitCode'] === 0) {
-            return $result['stdout'];
+        if ($result->exitCode === 0) {
+            return $result->stdout;
         }
 
-        $detail = trim($result['stderr']);
+        $detail = trim($result->stderr);
 
         throw new \RuntimeException(
             $detail !== '' ? "$error $detail" : $error,
         );
-    }
-
-    /**
-     * @param list<string> $cmd
-     * @return array{exitCode: int, stdout: string, stderr: string}
-     * @throws \RuntimeException if Git cannot be started.
-     */
-    private function executeCommand(array $cmd, string $pwd): array
-    {
-        $process = proc_open(
-            $cmd,
-            [
-                ['pipe', 'r'],
-                ['pipe', 'w'],
-                ['pipe', 'w'],
-            ],
-            $pipes,
-            $pwd,
-        );
-
-        if (!is_resource($process)) {
-            throw new \RuntimeException('Could not start Git.');
-        }
-
-        fclose($pipes[0]);
-        $stdout = stream_get_contents($pipes[1]);
-        $stderr = stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-
-        return [
-            'exitCode' => proc_close($process),
-            'stdout' => $stdout !== false ? $stdout : '',
-            'stderr' => $stderr !== false ? $stderr : '',
-        ];
     }
 }
