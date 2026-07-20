@@ -19,39 +19,27 @@ use PHPUnit\Framework\TestCase;
 final class XmlProcessingResultTest extends TestCase
 {
     #[Test]
-    public function itHasNoPendingFixesWithoutFixApplication(): void
+    public function itHasNoPendingFixesForIdenticalContent(): void
     {
         $result = new XmlProcessingResult(
             new FileReport('input.xml'),
             new File('input.xml', '<root/>'),
-            false,
+            new File('input.xml', '<root/>'),
         );
 
-        self::assertFalse($result->hasPendingFixesToPersist());
+        self::assertFalse($result->isModified());
     }
 
     #[Test]
-    public function itHasPendingFixesWhenFixApplicationExists(): void
+    public function itHasPendingFixesForModifiedContent(): void
     {
         $result = new XmlProcessingResult(
             new FileReport('input.xml'),
             new File('input.xml', '<root/>'),
-            true,
-        );
-
-        self::assertTrue($result->hasPendingFixesToPersist());
-    }
-
-    #[Test]
-    public function itHasPendingFixesWhenFixesWereApplied(): void
-    {
-        $result = new XmlProcessingResult(
-            new FileReport('input.xml'),
             new File('input.xml', '<root fixed="fixed"/>'),
-            true,
         );
 
-        self::assertTrue($result->hasPendingFixesToPersist());
+        self::assertTrue($result->isModified());
     }
 
     #[Test]
@@ -60,7 +48,7 @@ final class XmlProcessingResultTest extends TestCase
         $result = new XmlProcessingResult(
             new FileReport('input.xml'),
             new File('input.xml', '<root/>'),
-            false,
+            new File('input.xml', '<root/>'),
         );
 
         $this->expectException(FixerException::class);
@@ -74,8 +62,8 @@ final class XmlProcessingResultTest extends TestCase
     {
         $result = new XmlProcessingResult(
             new FileReport('input.xml'),
+            new File('input.xml', '<root/>'),
             new File('input.xml', '<root fixed="fixed"/>'),
-            true,
         );
 
         self::assertSame('<root fixed="fixed"/>', $result->fixedContent());

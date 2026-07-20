@@ -88,7 +88,7 @@ final class RunCoordinator
                 $fileReport = $result->fileReport;
 
                 if (
-                    $result->hasPendingFixesToPersist()
+                    $result->isModified()
                     && @file_put_contents($filePath, $result->fixedContent()) === false
                 ) {
                     throw FixerException::cannotPersist($filePath);

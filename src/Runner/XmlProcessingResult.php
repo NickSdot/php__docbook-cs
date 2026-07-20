@@ -12,23 +12,23 @@ final readonly class XmlProcessingResult
 {
     public function __construct(
         public FileReport $fileReport,
-        public File $file,
-        public bool $modified,
+        public File $initialFile,
+        public File $currentFile,
     ) {
     }
 
-    public function hasPendingFixesToPersist(): bool
+    public function isModified(): bool
     {
-        return $this->modified;
+        return $this->initialFile->content !== $this->currentFile->content;
     }
 
     /** @throws FixerException */
     public function fixedContent(): string
     {
-        if (!$this->modified) {
+        if (!$this->isModified()) {
             throw FixerException::cannotReadFixedContent();
         }
 
-        return $this->file->content;
+        return $this->currentFile->content;
     }
 }

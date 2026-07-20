@@ -99,8 +99,8 @@ final readonly class XmlFileProcessor
 
         return new XmlProcessingResult(
             fileReport: $fileReport,
-            file: $currentFile,
-            modified: $currentFile !== $initialFile,
+            initialFile: $initialFile,
+            currentFile: $currentFile,
         );
     }
 

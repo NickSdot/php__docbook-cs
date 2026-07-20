@@ -316,7 +316,7 @@ final class FixConvergenceTest extends TestCase
         self::assertIsString($content);
 
         $result = $processor->process(new File($path, $content), $fileChange);
-        if ($result->hasPendingFixesToPersist()) {
+        if ($result->isModified()) {
             file_put_contents($path, $result->fixedContent());
         }
 

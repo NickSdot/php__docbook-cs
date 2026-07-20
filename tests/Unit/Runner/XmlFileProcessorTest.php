@@ -518,7 +518,7 @@ final class XmlFileProcessorTest extends TestCase
         self::assertIsString($content);
 
         $result = $processor->process(new File($path, $content));
-        if ($result->hasPendingFixesToPersist()) {
+        if ($result->isModified()) {
             file_put_contents($path, $result->fixedContent());
         }
 
