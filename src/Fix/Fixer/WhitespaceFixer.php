@@ -38,7 +38,6 @@ final class WhitespaceFixer implements Fixer
             $violation->untilOffset,
             $fixed,
             $violation->sniffCode,
-            $violation->line,
         );
     }
 }

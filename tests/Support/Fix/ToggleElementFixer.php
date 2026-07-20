@@ -29,7 +29,6 @@ final class ToggleElementFixer implements Fixer
             untilOffset: $violation->untilOffset,
             replacement: $replacement,
             sniffCode: $violation->sniffCode,
-            line: $violation->line,
             expectedContent: $violation->content,
         );
     }

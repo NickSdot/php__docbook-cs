@@ -29,7 +29,6 @@ final class TrailingWhitespaceFixer implements Fixer
             untilOffset: $violation->untilOffset,
             replacement: '',
             sniffCode: $violation->sniffCode,
-            line: $violation->line,
             expectedContent: $violation->content,
         );
     }

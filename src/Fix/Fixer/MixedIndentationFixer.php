@@ -33,7 +33,6 @@ final class MixedIndentationFixer implements Fixer
             untilOffset: $violation->untilOffset,
             replacement: str_replace("\t", ' ', $violation->content),
             sniffCode: $violation->sniffCode,
-            line: $violation->line,
             expectedContent: $violation->content,
         );
     }

@@ -56,7 +56,7 @@ final class SourceScopeTest extends TestCase
         $file = new File('file.xml', "one\ntwo\nthree");
         $scope = SourceScope::changedLines($file, [2]);
         $scope = $scope->after([
-            new Fix('file.xml', 0, 0, "x\n", 'Test', 1),
+            new Fix('file.xml', 0, 0, "x\n", 'Test'),
         ]);
         $file = $file->withContent("x\none\ntwo\nthree");
 
@@ -72,7 +72,7 @@ final class SourceScopeTest extends TestCase
         $file = new File('file.xml', "root\n");
         $scope = SourceScope::changedLines($file, [2]);
         $scope = $scope->after([
-            new Fix('file.xml', 5, 5, 'value', 'Test', 2),
+            new Fix('file.xml', 5, 5, 'value', 'Test'),
         ]);
 
         self::assertTrue($scope->includes($this->violation(5, 10, 2)));
@@ -84,8 +84,8 @@ final class SourceScopeTest extends TestCase
         $file = new File('file.xml', "one\ntwo\nthree");
         $scope = SourceScope::changedLines($file, [2]);
         $scope = $scope->after([
-            new Fix('file.xml', 13, 13, "\nfour", 'Test', 3),
-            new Fix('file.xml', 0, 0, "zero\n", 'Test', 1),
+            new Fix('file.xml', 13, 13, "\nfour", 'Test'),
+            new Fix('file.xml', 0, 0, "zero\n", 'Test'),
         ]);
         $file = $file->withContent("zero\none\ntwo\nthree\nfour");
 

@@ -12,7 +12,6 @@ final readonly class Fix
         public int $untilOffset,
         public string $replacement,
         public string $sniffCode,
-        public int $line,
         public ?string $expectedContent = null,
     ) {
     }

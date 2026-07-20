@@ -38,7 +38,6 @@ final class SimparaFixer implements Fixer
                 $range->untilOffset,
                 self::TARGET_ELEMENT,
                 $violation->sniffCode,
-                $range->line,
                 self::SOURCE_ELEMENT,
             );
         }

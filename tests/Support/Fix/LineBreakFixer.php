@@ -23,7 +23,6 @@ final class LineBreakFixer implements Fixer
             untilOffset: $violation->untilOffset,
             replacement: "\n",
             sniffCode: $violation->sniffCode,
-            line: $violation->line,
             expectedContent: $violation->content,
         );
     }

@@ -25,8 +25,8 @@ final class FixPlanTest extends TestCase
         $content = '<para>x</para>';
         $source = new File('file.xml', $content);
         $plan = new FixPlan(
-            new Fix('file.xml', 1, 5, 'simpara', 'Sniff', 1, 'para'),
-            new Fix('file.xml', 9, 13, 'simpara', 'Sniff', 1, 'para'),
+            new Fix('file.xml', 1, 5, 'simpara', 'Sniff', 'para'),
+            new Fix('file.xml', 9, 13, 'simpara', 'Sniff', 'para'),
         );
 
         $result = new FixApplier()->apply($source, [$plan]);
@@ -42,10 +42,10 @@ final class FixPlanTest extends TestCase
         $content = '<para>x</para>';
         $source = new File('file.xml', $content);
         $plan = new FixPlan(
-            new Fix('file.xml', 1, 5, 'simpara', 'ElementSniff', 1, 'para'),
-            new Fix('file.xml', 9, 13, 'simpara', 'ElementSniff', 1, 'para'),
+            new Fix('file.xml', 1, 5, 'simpara', 'ElementSniff', 'para'),
+            new Fix('file.xml', 9, 13, 'simpara', 'ElementSniff', 'para'),
         );
-        $textFix = new Fix('file.xml', 6, 7, 'y', 'TextSniff', 1, 'x');
+        $textFix = new Fix('file.xml', 6, 7, 'y', 'TextSniff', 'x');
 
         $result = new FixApplier()->apply($source, [$plan, $textFix]);
 
@@ -60,8 +60,8 @@ final class FixPlanTest extends TestCase
         $content = '<para>x</parb>';
         $source = new File('file.xml', $content);
         $plan = new FixPlan(
-            new Fix('file.xml', 1, 5, 'simpara', 'Sniff', 1, 'para'),
-            new Fix('file.xml', 9, 13, 'simpara', 'Sniff', 1, 'para'),
+            new Fix('file.xml', 1, 5, 'simpara', 'Sniff', 'para'),
+            new Fix('file.xml', 9, 13, 'simpara', 'Sniff', 'para'),
         );
 
         $result = new FixApplier()->apply($source, [$plan]);
@@ -76,10 +76,10 @@ final class FixPlanTest extends TestCase
     {
         $content = '<para>x</para>';
         $source = new File('file.xml', $content);
-        $openingTagFix = new Fix('file.xml', 1, 5, 'other', 'FirstSniff', 1, 'para');
+        $openingTagFix = new Fix('file.xml', 1, 5, 'other', 'FirstSniff', 'para');
         $plan = new FixPlan(
-            new Fix('file.xml', 1, 5, 'simpara', 'SecondSniff', 1, 'para'),
-            new Fix('file.xml', 9, 13, 'simpara', 'SecondSniff', 1, 'para'),
+            new Fix('file.xml', 1, 5, 'simpara', 'SecondSniff', 'para'),
+            new Fix('file.xml', 9, 13, 'simpara', 'SecondSniff', 'para'),
         );
 
         $result = new FixApplier()->apply($source, [$openingTagFix, $plan]);
@@ -94,7 +94,7 @@ final class FixPlanTest extends TestCase
     {
         $content = '<para>x</para>';
         $source = new File('file.xml', $content);
-        $fix = new Fix('other.xml', 1, 5, 'simpara', 'Sniff', 1, 'para');
+        $fix = new Fix('other.xml', 1, 5, 'simpara', 'Sniff', 'para');
 
         $result = new FixApplier()->apply($source, [$fix]);
 

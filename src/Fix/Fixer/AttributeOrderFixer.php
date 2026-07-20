@@ -37,7 +37,6 @@ final class AttributeOrderFixer implements Fixer
             $violation->untilOffset,
             sprintf(self::OPENING_TAG_FORMAT, $matches[1], $fixedAttributeString),
             $violation->sniffCode,
-            $violation->line,
         );
     }
 
