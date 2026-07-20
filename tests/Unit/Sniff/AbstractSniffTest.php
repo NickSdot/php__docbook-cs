@@ -21,7 +21,7 @@ final class AbstractSniffTest extends TestCase
                 return 'test.sniff';
             }
 
-            public function process(\DOMDocument $document, File $source): array
+            public function process(\DOMDocument $document, File $file): array
             {
                 return [];
             }

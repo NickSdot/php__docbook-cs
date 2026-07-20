@@ -67,16 +67,16 @@ final class FixConvergenceTest extends TestCase
                     return LineBreakFixer::class;
                 }
 
-                public function process(\DOMDocument $document, File $source): array
+                public function process(\DOMDocument $document, File $file): array
                 {
-                    $offset = strpos($source->content, self::ELEMENT);
+                    $offset = strpos($file->content, self::ELEMENT);
                     if ($offset === false) {
                         return [];
                     }
 
                     return [$this->createViolation(
-                        $source->path,
-                        substr_count($source->content, "\n", 0, $offset) + 1,
+                        $file->path,
+                        substr_count($file->content, "\n", 0, $offset) + 1,
                         $offset,
                         $offset + strlen(self::ELEMENT),
                         'Replace the line-break marker.',
@@ -90,20 +90,20 @@ final class FixConvergenceTest extends TestCase
                     return 'Test.BadElement';
                 }
 
-                public function process(\DOMDocument $document, File $source): array
+                public function process(\DOMDocument $document, File $file): array
                 {
                     $element = $document->getElementsByTagName('bad')->item(0);
                     if (!$element instanceof \DOMElement) {
                         return [];
                     }
 
-                    $offset = strpos($source->content, '<bad/>');
+                    $offset = strpos($file->content, '<bad/>');
                     if ($offset === false) {
                         return [];
                     }
 
                     return [$this->createViolation(
-                        $source->path,
+                        $file->path,
                         $element->getLineNo(),
                         $offset,
                         $offset + strlen('<bad/>'),
@@ -145,16 +145,16 @@ final class FixConvergenceTest extends TestCase
                     return LineBreakFixer::class;
                 }
 
-                public function process(\DOMDocument $document, File $source): array
+                public function process(\DOMDocument $document, File $file): array
                 {
                     $element = '<line-break/>';
-                    $offset = strpos($source->content, $element);
+                    $offset = strpos($file->content, $element);
                     if ($offset === false) {
                         return [];
                     }
 
                     return [$this->createViolation(
-                        $source->path,
+                        $file->path,
                         2,
                         $offset,
                         $offset + strlen($element),
@@ -169,17 +169,17 @@ final class FixConvergenceTest extends TestCase
                     return 'Test.ScopedBadElement';
                 }
 
-                public function process(\DOMDocument $document, File $source): array
+                public function process(\DOMDocument $document, File $file): array
                 {
                     $element = $document->getElementsByTagName('bad')->item(0);
-                    $offset = strpos($source->content, '<bad/>');
+                    $offset = strpos($file->content, '<bad/>');
 
                     if (!$element instanceof \DOMElement || $offset === false) {
                         return [];
                     }
 
                     return [$this->createViolation(
-                        $source->path,
+                        $file->path,
                         $element->getLineNo(),
                         $offset,
                         $offset + strlen('<bad/>'),
@@ -222,16 +222,16 @@ final class FixConvergenceTest extends TestCase
                     return ToggleElementFixer::class;
                 }
 
-                public function process(\DOMDocument $document, File $source): array
+                public function process(\DOMDocument $document, File $file): array
                 {
-                    $element = str_contains($source->content, '<alpha/>') ? '<alpha/>' : '<beta/>';
-                    $offset = strpos($source->content, $element);
+                    $element = str_contains($file->content, '<alpha/>') ? '<alpha/>' : '<beta/>';
+                    $offset = strpos($file->content, $element);
                     if ($offset === false) {
                         return [];
                     }
 
                     return [$this->createViolation(
-                        $source->path,
+                        $file->path,
                         1,
                         $offset,
                         $offset + strlen($element),
@@ -275,15 +275,15 @@ final class FixConvergenceTest extends TestCase
                     return AttributeOrderFixer::class;
                 }
 
-                public function process(\DOMDocument $document, File $source): array
+                public function process(\DOMDocument $document, File $file): array
                 {
-                    $offset = strpos($source->content, '<valid/>');
+                    $offset = strpos($file->content, '<valid/>');
                     if ($offset === false) {
                         return [];
                     }
 
                     return [$this->createViolation(
-                        $source->path,
+                        $file->path,
                         1,
                         $offset,
                         $offset + strlen('<valid/>'),

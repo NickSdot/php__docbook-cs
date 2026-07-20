@@ -193,12 +193,12 @@ final class SniffRunnerTest extends TestCase
                 return 'Test.ViolatingSniff';
             }
 
-            public function process(\DOMDocument $document, File $source): array
+            public function process(\DOMDocument $document, File $file): array
             {
                 return [
                     new Violation(
                         sniffCode: 'Test.ViolatingSniff',
-                        filePath: $source->path,
+                        filePath: $file->path,
                         line: 1,
                         beginOffset: 0,
                         untilOffset: 0,
@@ -236,12 +236,12 @@ final class SniffRunnerTest extends TestCase
                 return 'Test.ViolatingSniff';
             }
 
-            public function process(\DOMDocument $document, File $source): array
+            public function process(\DOMDocument $document, File $file): array
             {
                 return [
                     new Violation(
                         sniffCode: 'Test.ViolatingSniff',
-                        filePath: $source->path,
+                        filePath: $file->path,
                         line: 1,
                         beginOffset: 0,
                         untilOffset: 0,
@@ -291,7 +291,7 @@ final class SniffRunnerTest extends TestCase
                 return 'Test.ConfigurableSniff';
             }
 
-            public function process(\DOMDocument $document, File $source): array
+            public function process(\DOMDocument $document, File $file): array
             {
                 return [];
             }
@@ -394,12 +394,12 @@ final class SniffRunnerTest extends TestCase
                 return 'Test.ViolatingSniff';
             }
 
-            public function process(\DOMDocument $document, File $source): array
+            public function process(\DOMDocument $document, File $file): array
             {
                 return [
                     new Violation(
                         sniffCode: 'Test.ViolatingSniff',
-                        filePath: $source->path,
+                        filePath: $file->path,
                         line: 1,
                         beginOffset: 0,
                         untilOffset: 0,

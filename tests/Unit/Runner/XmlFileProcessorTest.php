@@ -359,12 +359,12 @@ final class XmlFileProcessorTest extends TestCase
                 return 'Test.NonFixable';
             }
 
-            public function process(\DOMDocument $document, File $source): array
+            public function process(\DOMDocument $document, File $file): array
             {
                 return [
                     new Violation(
                         sniffCode: self::getCode(),
-                        filePath: $source->path,
+                        filePath: $file->path,
                         line: 2,
                         beginOffset: 0,
                         untilOffset: 7,
@@ -403,12 +403,12 @@ final class XmlFileProcessorTest extends TestCase
                 return AttributeOrderFixer::class;
             }
 
-            public function process(\DOMDocument $document, File $source): array
+            public function process(\DOMDocument $document, File $file): array
             {
                 return [
                     new Violation(
                         sniffCode: self::getCode(),
-                        filePath: $source->path,
+                        filePath: $file->path,
                         line: 1,
                         beginOffset: 0,
                         untilOffset: 7,
@@ -477,12 +477,12 @@ final class XmlFileProcessorTest extends TestCase
                 return 'Test.Stub';
             }
 
-            public function process(\DOMDocument $document, File $source): array
+            public function process(\DOMDocument $document, File $file): array
             {
                 return array_map(
                     fn(int $line) => new Violation(
                         sniffCode: self::getCode(),
-                        filePath: $source->path,
+                        filePath: $file->path,
                         line: $line,
                         beginOffset: 0,
                         untilOffset: 0,
