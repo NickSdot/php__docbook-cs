@@ -30,27 +30,30 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Application::class)]
-#[CoversClass(DiffParser::class)]
-#[CoversClass(ConfigParser::class)]
-#[CoversClass(ConfigParserException::class)]
-#[CoversClass(ConfigData::class)]
-#[CoversClass(SniffEntry::class)]
-#[CoversClass(PathLoader::class)]
-#[CoversClass(PathMatcher::class)]
-#[CoversClass(NullProgress::class)]
-#[CoversClass(Report::class)]
-#[CoversClass(ConsoleReporter::class)]
-#[CoversClass(EntityPreprocessor::class)]
-#[CoversClass(SniffRunner::class)]
-#[CoversClass(XmlFileProcessor::class)]
-#[CoversClass(CheckstyleReporter::class)]
-#[CoversClass(JsonReporter::class)]
-#[CoversClass(FileReport::class)]
-#[CoversClass(ExceptionNameSniff::class)]
-#[CoversClass(EntityResolver::class)]
-#[UsesClass(Diff::class)]
-#[UsesClass(FileChange::class)]
+#[
+    CoversClass(Application::class),
+    CoversClass(CheckstyleReporter::class),
+    CoversClass(ConfigData::class),
+    CoversClass(ConfigParser::class),
+    CoversClass(ConfigParserException::class),
+    CoversClass(ConsoleReporter::class),
+    CoversClass(DiffParser::class),
+    CoversClass(EntityPreprocessor::class),
+    CoversClass(EntityResolver::class),
+    CoversClass(ExceptionNameSniff::class),
+    CoversClass(FileReport::class),
+    CoversClass(JsonReporter::class),
+    CoversClass(NullProgress::class),
+    CoversClass(PathLoader::class),
+    CoversClass(PathMatcher::class),
+    CoversClass(Report::class),
+    CoversClass(SniffEntry::class),
+    CoversClass(SniffRunner::class),
+    CoversClass(XmlFileProcessor::class),
+    //
+    UsesClass(Diff::class),
+    UsesClass(FileChange::class),
+]
 final class ApplicationTest extends TestCase
 {
     private const string FIXTURE_DIR = __DIR__ . '/../fixtures/application';

@@ -26,20 +26,23 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(SniffRunner::class)]
-#[CoversClass(ConfigData::class)]
-#[CoversClass(PathLoader::class)]
-#[CoversClass(PathMatcher::class)]
-#[CoversClass(NullProgress::class)]
-#[CoversClass(EntityPreprocessor::class)]
-#[CoversClass(EntityResolver::class)]
-#[CoversClass(XmlFileProcessor::class)]
-#[CoversClass(Report::class)]
-#[CoversClass(SniffEntry::class)]
-#[CoversClass(FileReport::class)]
-#[CoversClass(Violation::class)]
-#[UsesClass(Diff::class)]
-#[UsesClass(FileChange::class)]
+#[
+    CoversClass(ConfigData::class),
+    CoversClass(EntityPreprocessor::class),
+    CoversClass(EntityResolver::class),
+    CoversClass(FileReport::class),
+    CoversClass(NullProgress::class),
+    CoversClass(PathLoader::class),
+    CoversClass(PathMatcher::class),
+    CoversClass(Report::class),
+    CoversClass(SniffEntry::class),
+    CoversClass(SniffRunner::class),
+    CoversClass(Violation::class),
+    CoversClass(XmlFileProcessor::class),
+    //
+    UsesClass(Diff::class),
+    UsesClass(FileChange::class),
+]
 final class SniffRunnerTest extends TestCase
 {
     private const string FIXTURE_DIR = __DIR__ . '/../../fixtures/sniff_runner/default';
