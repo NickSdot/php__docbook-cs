@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace DocbookCS\Source;
 
-/** An externally immutable, in-memory representation of a named source file. */
 final class File
 {
     /** @var non-empty-list<int>|null */
@@ -110,10 +109,7 @@ final class File
 
     private function lineEndingAt(int $offset): string
     {
-        if (
-            $this->content[$offset] === "\r"
-            && ($this->content[$offset + 1] ?? null) === "\n"
-        ) {
+        if ($this->content[$offset] === "\r" && ($this->content[$offset + 1] ?? null) === "\n") {
             return "\r\n";
         }
 
