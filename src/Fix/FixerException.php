@@ -35,17 +35,15 @@ final class FixerException extends \RuntimeException
 
     public static function invalidFixedXml(string $filePath): self
     {
-        return new self(sprintf(
-            'Fixers produced invalid XML for %s; no changes were written.',
-            $filePath,
-        ));
+        return new self(
+            sprintf('Fixers produced invalid XML for %s; no changes were written.', $filePath),
+        );
     }
 
     public static function didNotConverge(string $filePath): self
     {
-        return new self(sprintf(
-            'Fixers did not converge for %s; no changes were written.',
-            $filePath,
-        ));
+        return new self(
+            sprintf('Fixers did not converge for %s; no changes were written.', $filePath),
+        );
     }
 }

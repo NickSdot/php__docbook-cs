@@ -40,11 +40,9 @@ final class File
     {
         $sourceLength = strlen($this->content);
         if ($offset < 0 || $offset > $sourceLength) {
-            throw new \OutOfBoundsException(sprintf(
-                'Source offset %d is outside the valid range 0..%d.',
-                $offset,
-                $sourceLength,
-            ));
+            throw new \OutOfBoundsException(
+                sprintf('Source offset %d is outside the valid range 0..%d.', $offset, $sourceLength),
+            );
         }
 
         $lineBeginOffsets = $this->lineBeginOffsets();

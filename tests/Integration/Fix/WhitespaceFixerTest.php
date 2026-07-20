@@ -32,10 +32,7 @@ final class WhitespaceFixerTest extends TestCase
         $document = $this->createDocument($content);
         $source = new File('file.xml', $content);
 
-        $violations = new WhitespaceSniff(RunMode::Fix)->process(
-            $document,
-            $source,
-        );
+        $violations = new WhitespaceSniff(RunMode::Fix)->process($document, $source);
 
         $secondLineOffset = (int) strpos($content, " \t<tag/>");
 

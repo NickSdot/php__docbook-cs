@@ -279,10 +279,7 @@ final class SimparaSniff extends AbstractSniff implements Fixable
             ];
         }
 
-        usort(
-            $sourceMatches,
-            static fn(array $a, array $b): int => $a['beginOffset'] <=> $b['beginOffset'],
-        );
+        usort($sourceMatches, static fn(array $a, array $b): int => $a['beginOffset'] <=> $b['beginOffset']);
 
         return $sourceMatches;
     }

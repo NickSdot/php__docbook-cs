@@ -37,10 +37,7 @@ final class EntityExpandedSniffTest extends TestCase
     public function exceptionNameIgnoresExpandedElements(): void
     {
         $source = '<root><classname>RuntimeException</classname>&expanded;</root>';
-        $document = $this->processedDocument(
-            $source,
-            '<classname>ExpandedException</classname>',
-        );
+        $document = $this->processedDocument($source, '<classname>ExpandedException</classname>');
 
         $violations = new ExceptionNameSniff()->process($document, new File('file.xml', $source));
 

@@ -311,11 +311,8 @@ final class FixConvergenceTest extends TestCase
         }
     }
 
-    private function processFile(
-        XmlFileProcessor $processor,
-        string $path,
-        ?FileChange $fileChange = null,
-    ): FileReport {
+    private function processFile(XmlFileProcessor $processor, string $path, ?FileChange $fileChange = null): FileReport
+    {
         $content = file_get_contents($path);
         self::assertIsString($content);
 

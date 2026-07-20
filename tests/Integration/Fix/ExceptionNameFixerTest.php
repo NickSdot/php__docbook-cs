@@ -32,10 +32,7 @@ final class ExceptionNameFixerTest extends TestCase
         $document = $this->createDocument($content);
         $source = new File('file.xml', $content);
 
-        $violations = new ExceptionNameSniff(RunMode::Fix)->process(
-            $document,
-            $source,
-        );
+        $violations = new ExceptionNameSniff(RunMode::Fix)->process($document, $source);
 
         $beginOffset = (int) strpos($content, '<classname>');
         $sourceContent = '<classname>RuntimeException</classname>';
@@ -61,10 +58,7 @@ final class ExceptionNameFixerTest extends TestCase
         $document = $this->createDocument($content);
         $source = new File('file.xml', $content);
 
-        $violations = new ExceptionNameSniff(RunMode::Fix)->process(
-            $document,
-            $source,
-        );
+        $violations = new ExceptionNameSniff(RunMode::Fix)->process($document, $source);
 
         self::assertCount(1, $violations);
         self::assertSame(
@@ -90,10 +84,7 @@ final class ExceptionNameFixerTest extends TestCase
         $document = $this->createDocument($content);
         $source = new File('file.xml', $content);
 
-        $violations = new ExceptionNameSniff(RunMode::Fix)->process(
-            $document,
-            $source,
-        );
+        $violations = new ExceptionNameSniff(RunMode::Fix)->process($document, $source);
 
         $sourceContent = '<classname>RuntimeException</classname>';
         $beginOffset = (int) strpos($content, $sourceContent);

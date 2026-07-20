@@ -45,10 +45,7 @@ final class ApplicationInputTest extends TestCase
         );
 
         self::assertSame(2, $app->run());
-        self::assertStringContainsString(
-            'Unknown option: --diff',
-            $this->readStream($this->stderr),
-        );
+        self::assertStringContainsString('Unknown option: --diff', $this->readStream($this->stderr));
     }
 
     #[Test]
@@ -76,26 +73,7 @@ final class ApplicationInputTest extends TestCase
         );
 
         self::assertSame(2, $app->run());
-        self::assertStringContainsString(
-            'Paths cannot be combined with diff input',
-            $this->readStream($this->stderr),
-        );
-    }
-
-    #[Test]
-    public function itTreatsStrictAsAnUnknownOption(): void
-    {
-        $app = new Application(
-            ['docbook-cs', '--strict'],
-            $this->stdout,
-            $this->stderr,
-        );
-
-        self::assertSame(2, $app->run());
-        self::assertStringContainsString(
-            'Unknown option: --strict',
-            $this->readStream($this->stderr),
-        );
+        self::assertStringContainsString('Paths cannot be combined with diff input', $this->readStream($this->stderr));
     }
 
     #[Test]

@@ -63,10 +63,7 @@ final class RunScopeTest extends TestCase
     {
         $config = $this->config();
 
-        self::assertSame(
-            1,
-            $this->executePaths($config, [$this->sourceFile])->getFilesScanned(),
-        );
+        self::assertSame(1, $this->executePaths($config, [$this->sourceFile])->getFilesScanned());
         self::assertSame(
             2,
             $this->executePaths(

@@ -32,10 +32,7 @@ final class AttributeOrderFixerTest extends TestCase
         $document = $this->createDocument($content);
         $source = new File('file.xml', $content);
 
-        $violations = new AttributeOrderSniff(RunMode::Fix)->process(
-            $document,
-            $source,
-        );
+        $violations = new AttributeOrderSniff(RunMode::Fix)->process($document, $source);
 
         $beginOffset = (int) strpos($content, '<root');
         $sourceContent = '<root xmlns="urn:test" xml:id="root"/>';

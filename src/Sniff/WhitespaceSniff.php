@@ -33,12 +33,7 @@ final class WhitespaceSniff extends AbstractSniff implements Fixable
         $offset = 0;
         $line = 1;
 
-        $lines = preg_split(
-            self::LINE_ENDING_PATTERN,
-            $file->content,
-            -1,
-            PREG_SPLIT_DELIM_CAPTURE,
-        );
+        $lines = preg_split(self::LINE_ENDING_PATTERN, $file->content, -1, PREG_SPLIT_DELIM_CAPTURE);
         if ($lines === false) {
             throw new \LogicException('Could not split source content into lines.'); // @codeCoverageIgnore
         }

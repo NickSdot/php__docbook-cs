@@ -112,10 +112,7 @@ final class AttributeOrderSniff extends AbstractSniff implements Fixable
             $line,
             $beginOffset,
             $untilOffset,
-            sprintf(
-                'Element <%s>: xml:id should appear before xmlns attributes.',
-                $tagName,
-            ),
+            sprintf('Element <%s>: xml:id should appear before xmlns attributes.', $tagName),
             $content,
         );
     }

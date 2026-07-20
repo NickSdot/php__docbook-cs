@@ -89,10 +89,7 @@ final class ExceptionNameSniff extends AbstractSniff implements Fixable
                 $match['affectedRanges'][0]->line,
                 $match['beginOffset'],
                 $match['untilOffset'],
-                sprintf(
-                    '"%s" is wrapped in <classname> but should use <exceptionname>.',
-                    $text,
-                ),
+                sprintf('"%s" is wrapped in <classname> but should use <exceptionname>.', $text),
                 $match['content'],
                 affectedRanges: $match['affectedRanges'],
             );
@@ -106,10 +103,7 @@ final class ExceptionNameSniff extends AbstractSniff implements Fixable
         $parts = explode('\\', $text);
         $baseName = end($parts);
 
-        return array_any(
-            self::DEFAULT_SUFFIXES,
-            static fn(string $suffix): bool => str_ends_with($baseName, $suffix),
-        );
+        return array_any(self::DEFAULT_SUFFIXES, static fn(string $suffix): bool => str_ends_with($baseName, $suffix));
     }
 
     /**

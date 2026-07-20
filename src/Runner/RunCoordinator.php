@@ -64,10 +64,7 @@ final class RunCoordinator
                 $result = $processor->process($file, $fileChange);
                 $fileReport = $result->fileReport;
 
-                if (
-                    $result->isModified()
-                    && @file_put_contents($filePath, $result->fixedContent()) === false
-                ) {
+                if ($result->isModified() && @file_put_contents($filePath, $result->fixedContent()) === false) {
                     throw FixerException::cannotPersist($filePath);
                 }
             }
@@ -101,20 +98,17 @@ final class RunCoordinator
             $className = $entry->getClassName();
 
             if (!class_exists($className)) {
-                throw new \RuntimeException(sprintf(
-                    'Sniff class "%s" does not exist.',
-                    $className,
-                ));
+                throw new \RuntimeException(
+                    sprintf('Sniff class "%s" does not exist.', $className),
+                );
             }
 
             $instance = new $className($mode);
 
             if (!$instance instanceof SniffInterface) {
-                throw new \RuntimeException(sprintf(
-                    'Class "%s" does not implement %s.',
-                    $className,
-                    SniffInterface::class,
-                ));
+                throw new \RuntimeException(
+                    sprintf('Class "%s" does not implement %s.', $className, SniffInterface::class),
+                );
             }
 
             foreach ($entry->getProperties() as $name => $value) {

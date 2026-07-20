@@ -357,21 +357,13 @@ final class SniffRunnerTest extends TestCase
     }
 
     /** @param list<string>|null $paths */
-    private function planPaths(
-        ConfigData $config,
-        ?array $paths = null,
-        RunMode $mode = RunMode::Sniff,
-    ): RunPlan {
-        return new RunPlanner($config, $mode)->planPaths(
-            $paths ?? $config->getIncludePaths(),
-        );
+    private function planPaths(ConfigData $config, ?array $paths = null, RunMode $mode = RunMode::Sniff): RunPlan
+    {
+        return new RunPlanner($config, $mode)->planPaths($paths ?? $config->getIncludePaths());
     }
 
-    private function planDiff(
-        ConfigData $config,
-        Diff $diff,
-        RunMode $mode = RunMode::Sniff,
-    ): RunPlan {
+    private function planDiff(ConfigData $config, Diff $diff, RunMode $mode = RunMode::Sniff): RunPlan
+    {
         return new RunPlanner($config, $mode)->planDiff($diff);
     }
 }

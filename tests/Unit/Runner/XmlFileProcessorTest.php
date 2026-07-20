@@ -413,10 +413,7 @@ final class XmlFileProcessorTest extends TestCase
         $this->expectException(FixerException::class);
         $this->expectExceptionMessageIsOrContains('Violations cannot be content-less when passed to a fixer.');
 
-        $this->process(
-            $this->processor([$sniff]),
-            $this->xml('<root xmlns="urn:test" xml:id="root"/>'),
-        );
+        $this->process($this->processor([$sniff]), $this->xml('<root xmlns="urn:test" xml:id="root"/>'));
     }
 
     /** @param list<int> $lines */

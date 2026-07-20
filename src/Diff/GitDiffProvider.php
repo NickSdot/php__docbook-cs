@@ -27,14 +27,14 @@ final readonly class GitDiffProvider implements DiffProviderInterface
 
         $error = sprintf('Unclear where HEAD branched from %s.', $baseReference);
 
-        $mergeBase = trim($this->runOrThrow(
+        $mergeBase = $this->runOrThrow(
             ['git', 'merge-base', 'HEAD', $baseReference],
             $repositoryRoot,
             $error,
-        ));
+        );
 
         return $this->runOrThrow(
-            ['git', 'diff', '--no-ext-diff', '--no-color', $mergeBase, '--'],
+            ['git', 'diff', '--no-ext-diff', '--no-color', trim($mergeBase), '--'],
             $repositoryRoot,
             'Could not read diff.',
         );

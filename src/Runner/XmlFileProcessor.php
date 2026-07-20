@@ -65,12 +65,7 @@ final readonly class XmlFileProcessor
                 break;
             }
 
-            $fixes = $this->runSniffs(
-                $document,
-                $currentFile,
-                $passReport,
-                $scope,
-            );
+            $fixes = $this->runSniffs($document, $currentFile, $passReport, $scope);
 
             if ($fixes === []) {
                 break;
@@ -111,12 +106,8 @@ final readonly class XmlFileProcessor
      * @return list<Fix|FixPlan>
      * @throws FixerException
      */
-    private function runSniffs(
-        \DOMDocument $document,
-        File $file,
-        FileReport $fileReport,
-        SourceScope $scope,
-    ): array {
+    private function runSniffs(\DOMDocument $document, File $file, FileReport $fileReport, SourceScope $scope): array
+    {
         $fixes = [];
 
         foreach ($this->sniffs as $sniff) {
@@ -126,12 +117,7 @@ final readonly class XmlFileProcessor
 
             $this->report->addSniffTime($sniff::getCode(), microtime(true) - $start);
 
-            $relevantViolations = $this->violationScopeFilter->filter(
-                $sniffViolations,
-                $document,
-                $file,
-                $scope,
-            );
+            $relevantViolations = $this->violationScopeFilter->filter($sniffViolations, $document, $file, $scope);
 
             $fileReport->addViolations($relevantViolations);
 

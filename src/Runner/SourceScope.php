@@ -72,10 +72,7 @@ final readonly class SourceScope
     public function lineNumbers(File $file): array
     {
         if ($this->ranges === null) {
-            return array_map(
-                static fn(Line $line): int => $line->number,
-                iterator_to_array($file->lines(), false),
-            );
+            return array_map(static fn(Line $line): int => $line->number, iterator_to_array($file->lines(), false));
         }
 
         $lineNumbers = [];
@@ -83,10 +80,7 @@ final readonly class SourceScope
         $rangeCount = count($this->ranges);
 
         foreach ($file->lines() as $line) {
-            while (
-                $rangeIndex < $rangeCount
-                && self::endsBefore($this->ranges[$rangeIndex], $line->beginOffset)
-            ) {
+            while ($rangeIndex < $rangeCount && self::endsBefore($this->ranges[$rangeIndex], $line->beginOffset)) {
                 $rangeIndex++;
             }
 
@@ -94,14 +88,8 @@ final readonly class SourceScope
                 break;
             }
 
-            if (
-                self::overlaps(
-                    $this->ranges[$rangeIndex][0],
-                    $this->ranges[$rangeIndex][1],
-                    $line->beginOffset,
-                    $line->offsetAfterLine(),
-                )
-            ) {
+            [$beginOffset, $untilOffset] = $this->ranges[$rangeIndex];
+            if (self::overlaps($beginOffset, $untilOffset, $line->beginOffset, $line->offsetAfterLine())) {
                 $lineNumbers[] = $line->number;
             }
         }
@@ -115,15 +103,9 @@ final readonly class SourceScope
             return true;
         }
 
+        /** @noinspection PhpLoopCanBeConvertedToArrayAnyInspection */
         foreach ($this->ranges as [$beginOffset, $untilOffset]) {
-            if (
-                self::overlaps(
-                    $beginOffset,
-                    $untilOffset,
-                    $violation->beginOffset,
-                    $violation->untilOffset,
-                )
-            ) {
+            if (self::overlaps($beginOffset, $untilOffset, $violation->beginOffset, $violation->untilOffset)) {
                 return true;
             }
         }
@@ -209,9 +191,7 @@ final readonly class SourceScope
             }
 
             if ($fix->beginOffset < $offset && $fix->untilOffset > $offset) {
-                return $fix->beginOffset
-                    + $shift
-                    + ($endBoundary ? strlen($fix->replacement) : 0);
+                return $fix->beginOffset + $shift + ($endBoundary ? strlen($fix->replacement) : 0);
             }
 
             if ($fix->beginOffset >= $offset) {
@@ -222,12 +202,8 @@ final readonly class SourceScope
         return $offset + $shift;
     }
 
-    private static function overlaps(
-        int $aBegin,
-        int $aUntil,
-        int $bBegin,
-        int $bUntil,
-    ): bool {
+    private static function overlaps(int $aBegin, int $aUntil, int $bBegin, int $bUntil): bool
+    {
         if ($aBegin === $aUntil) {
             return $bBegin === $bUntil
                 ? $aBegin === $bBegin

@@ -82,12 +82,8 @@ final class FixApplier
     /**
      * @param list<Fix> $acceptedFixes
      */
-    private function canApply(
-        File $file,
-        int $contentLength,
-        FixPlan $plan,
-        array $acceptedFixes,
-    ): bool {
+    private function canApply(File $file, int $contentLength, FixPlan $plan, array $acceptedFixes): bool
+    {
         $content = $file->content;
         $first = $plan->fixes[0];
         $previous = null;
@@ -106,11 +102,7 @@ final class FixApplier
                 return false;
             }
 
-            $currentContent = substr(
-                $content,
-                $fix->beginOffset,
-                $fix->untilOffset - $fix->beginOffset,
-            );
+            $currentContent = substr($content, $fix->beginOffset, $fix->untilOffset - $fix->beginOffset);
 
             if ($fix->expectedContent !== null && $currentContent !== $fix->expectedContent) {
                 return false;
@@ -125,11 +117,7 @@ final class FixApplier
     private function changesContent(string $content, FixPlan $plan): bool
     {
         foreach ($plan->fixes as $fix) {
-            $currentContent = substr(
-                $content,
-                $fix->beginOffset,
-                $fix->untilOffset - $fix->beginOffset,
-            );
+            $currentContent = substr($content, $fix->beginOffset, $fix->untilOffset - $fix->beginOffset);
 
             if ($currentContent !== $fix->replacement) {
                 return true;
@@ -205,16 +193,13 @@ final class FixApplier
         }
 
         if ($aIsInsertion) {
-            return $a->beginOffset > $b->beginOffset
-                && $a->beginOffset < $b->untilOffset;
+            return $a->beginOffset > $b->beginOffset && $a->beginOffset < $b->untilOffset;
         }
 
         if ($bIsInsertion) {
-            return $b->beginOffset > $a->beginOffset
-                && $b->beginOffset < $a->untilOffset;
+            return $b->beginOffset > $a->beginOffset && $b->beginOffset < $a->untilOffset;
         }
 
-        return $a->beginOffset < $b->untilOffset
-            && $b->beginOffset < $a->untilOffset;
+        return $a->beginOffset < $b->untilOffset && $b->beginOffset < $a->untilOffset;
     }
 }

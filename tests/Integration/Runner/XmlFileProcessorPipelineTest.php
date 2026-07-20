@@ -72,11 +72,8 @@ final class XmlFileProcessorPipelineTest extends TestCase
         }
     }
 
-    private function process(
-        XmlFileProcessor $processor,
-        string $content,
-        string $path = 'input.xml',
-    ): FileReport {
+    private function process(XmlFileProcessor $processor, string $content, string $path = 'input.xml'): FileReport
+    {
         return $processor->process(new File($path, $content))->fileReport;
     }
 

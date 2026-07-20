@@ -28,14 +28,7 @@ final class TrailingWhitespaceSniff extends AbstractSniff implements Fixable
         $violations = [];
 
         foreach ($file->lines() as $line) {
-            if (
-                !preg_match(
-                    self::TRAILING_WHITESPACE_PATTERN,
-                    $line->content,
-                    $matches,
-                    PREG_OFFSET_CAPTURE,
-                )
-            ) {
+            if (!preg_match(self::TRAILING_WHITESPACE_PATTERN, $line->content, $matches, PREG_OFFSET_CAPTURE)) {
                 continue;
             }
 
