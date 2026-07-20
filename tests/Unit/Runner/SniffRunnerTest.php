@@ -23,6 +23,7 @@ use DocbookCS\Runner\XmlFileProcessor;
 use DocbookCS\Sniff\SniffInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(SniffRunner::class)]
@@ -37,6 +38,8 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(SniffEntry::class)]
 #[CoversClass(FileReport::class)]
 #[CoversClass(Violation::class)]
+#[UsesClass(Diff::class)]
+#[UsesClass(FileChange::class)]
 final class SniffRunnerTest extends TestCase
 {
     private const string FIXTURE_DIR = __DIR__ . '/../../fixtures/sniff_runner/default';
