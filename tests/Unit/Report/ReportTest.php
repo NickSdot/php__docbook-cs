@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DocbookCS\Tests\Unit\Report;
 
+use DocbookCS\RelativePath;
 use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
 use DocbookCS\Violation\Severity;
@@ -15,6 +16,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(Report::class)]
 #[CoversClass(Violation::class)]
 #[CoversClass(FileReport::class)]
+#[CoversClass(RelativePath::class)]
 final class ReportTest extends TestCase
 {
     private function createViolation(
@@ -67,11 +69,13 @@ final class ReportTest extends TestCase
     }
 
     #[Test]
-    public function itStoresFileReportPathRelativeToWorkingDirectory(): void
+    public function itKeepsTheFileReportPathWhileRenderingItRelativeToWorkingDirectory(): void
     {
-        $fileReport = new FileReport((getcwd() ?: '') . '/src/chapter.xml');
+        $filePath = (getcwd() ?: '') . '/src/chapter.xml';
+        $fileReport = new FileReport($filePath);
 
-        self::assertSame('src/chapter.xml', $fileReport->filePath);
+        self::assertSame($filePath, $fileReport->filePath);
+        self::assertSame('src/chapter.xml', RelativePath::fromWorkingDirectory($fileReport->filePath));
     }
 
     #[Test]

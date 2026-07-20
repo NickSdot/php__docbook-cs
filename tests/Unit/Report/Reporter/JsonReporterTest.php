@@ -311,6 +311,20 @@ final class JsonReporterTest extends TestCase
     }
 
     #[Test]
+    public function itRendersAbsoluteFilePathRelativeToWorkingDirectory(): void
+    {
+        $fileReport = new FileReport((getcwd() ?: '') . '/path/to/file.xml');
+        $fileReport->addViolation($this->createViolation());
+
+        $report = new Report();
+        $report->addFileReport($fileReport);
+
+        $data = $this->parseOutput($this->reporter->generate($report));
+
+        self::assertArrayHasKey('path/to/file.xml', $data['files']);
+    }
+
+    #[Test]
     public function itUsesPrettyPrintedJson(): void
     {
         $report = new Report();

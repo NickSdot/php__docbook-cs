@@ -112,6 +112,23 @@ final class CheckstyleReporterTest extends TestCase
     }
 
     #[Test]
+    public function itRendersAbsoluteFilePathRelativeToWorkingDirectory(): void
+    {
+        $fileReport = new FileReport((getcwd() ?: '') . '/src/broken.xml');
+        $fileReport->addViolation($this->createViolation());
+
+        $report = new Report();
+        $report->addFileReport($fileReport);
+
+        $dom = $this->parseOutput($this->reporter->generate($report));
+
+        self::assertSame(
+            'src/broken.xml',
+            $dom->getElementsByTagName('file')->item(0)?->getAttribute('name'),
+        );
+    }
+
+    #[Test]
     public function itSetsLineAttribute(): void
     {
         $fileReport = new FileReport('file.xml');

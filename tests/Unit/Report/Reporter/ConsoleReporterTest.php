@@ -89,6 +89,20 @@ final class ConsoleReporterTest extends TestCase
     }
 
     #[Test]
+    public function itRendersAbsoluteFilePathRelativeToWorkingDirectory(): void
+    {
+        $fileReport = new FileReport((getcwd() ?: '') . '/src/broken.xml');
+        $fileReport->addViolation($this->createViolation());
+
+        $report = new Report();
+        $report->addFileReport($fileReport);
+
+        $output = $this->reporter->generate($report);
+
+        self::assertStringContainsString('FILE: src/broken.xml', $output);
+    }
+
+    #[Test]
     public function itShowsDashSeparatorAfterFileHeader(): void
     {
         $fileReport = new FileReport('file.xml');
