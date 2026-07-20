@@ -7,6 +7,7 @@ namespace DocbookCS\Tests\Integration\Runner;
 use DocbookCS\Diff\FileChange;
 use DocbookCS\Fix\Fixer\AttributeOrderFixer;
 use DocbookCS\Fix\FixerException;
+use DocbookCS\Report\FileReport;
 use DocbookCS\Runner\RunMode;
 use DocbookCS\Runner\XmlFileProcessor;
 use DocbookCS\Sniff\AbstractSniff;
@@ -311,7 +312,7 @@ final class FixConvergenceTest extends TestCase
         XmlFileProcessor $processor,
         string $path,
         ?FileChange $fileChange = null,
-    ): \DocbookCS\Report\FileReport {
+    ): FileReport {
         $content = file_get_contents($path);
         self::assertIsString($content);
 

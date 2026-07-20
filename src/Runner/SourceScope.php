@@ -6,6 +6,7 @@ namespace DocbookCS\Runner;
 
 use DocbookCS\Fix\Fix;
 use DocbookCS\Source\File;
+use DocbookCS\Source\Line;
 use DocbookCS\Violation\Violation;
 
 final readonly class SourceScope
@@ -55,7 +56,7 @@ final readonly class SourceScope
     {
         if ($this->ranges === null) {
             return array_map(
-                static fn(\DocbookCS\Source\Line $line): int => $line->number,
+                static fn(Line $line): int => $line->number,
                 iterator_to_array($file->lines(), false),
             );
         }
