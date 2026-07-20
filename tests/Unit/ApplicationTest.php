@@ -6,7 +6,7 @@ namespace DocbookCS\Tests\Unit;
 
 use DocbookCS\Application;
 use DocbookCS\Config\ConfigData;
-use DocbookCS\Diff\Diff;
+use DocbookCS\Diff\DiffChangeset;
 use DocbookCS\Diff\DiffParser;
 use DocbookCS\Diff\FileChange;
 use DocbookCS\Diff\GitDiffProvider;
@@ -66,7 +66,7 @@ use PHPUnit\Framework\TestCase;
     CoversClass(SniffEntry::class),
     CoversClass(XmlFileProcessor::class),
     //
-    UsesClass(Diff::class),
+    UsesClass(DiffChangeset::class),
     UsesClass(DiffPathLoader::class),
     UsesClass(File::class),
     UsesClass(FileChange::class),

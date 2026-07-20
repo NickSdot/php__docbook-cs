@@ -6,7 +6,7 @@ namespace DocbookCS\Tests\Unit\Runner;
 
 use DocbookCS\Config\ConfigData;
 use DocbookCS\Config\SniffEntry;
-use DocbookCS\Diff\Diff;
+use DocbookCS\Diff\DiffChangeset;
 use DocbookCS\Diff\FileChange;
 use DocbookCS\Diff\GitDiffProvider;
 use DocbookCS\Path\DiffPathLoader;
@@ -55,7 +55,7 @@ use PHPUnit\Framework\TestCase;
     CoversClass(Violation::class),
     CoversClass(XmlFileProcessor::class),
     //
-    UsesClass(Diff::class),
+    UsesClass(DiffChangeset::class),
     UsesClass(DiffPathLoader::class),
     UsesClass(File::class),
     UsesClass(FileChange::class),
@@ -290,7 +290,7 @@ final class SniffRunnerTest extends TestCase
         $config = $this->createConfig();
         $runner = new RunCoordinator();
 
-        $diff = new Diff([new FileChange(self::FIXTURE_DIR . '/file_a.xml', [1])]);
+        $diff = new DiffChangeset([new FileChange(self::FIXTURE_DIR . '/file_a.xml', [1])]);
         $report = $runner->run($this->planDiff($config, $diff));
 
         self::assertSame(1, $report->getFilesScanned());
@@ -302,7 +302,7 @@ final class SniffRunnerTest extends TestCase
         $config = $this->createConfig();
         $runner = new RunCoordinator();
 
-        $diff = new Diff([new FileChange('completely/different/file.xml', [1, 2, 3])]);
+        $diff = new DiffChangeset([new FileChange('completely/different/file.xml', [1, 2, 3])]);
         $report = $runner->run($this->planDiff($config, $diff));
 
         self::assertSame(0, $report->getFilesScanned());
@@ -316,7 +316,7 @@ final class SniffRunnerTest extends TestCase
 
         $discoveredPath = self::FIXTURE_DIR . '/file_a.xml';
 
-        $diff = new Diff([new FileChange($discoveredPath, [1])]);
+        $diff = new DiffChangeset([new FileChange($discoveredPath, [1])]);
         $report = $runner->run($this->planDiff($config, $diff));
 
         self::assertSame(1, $report->getFilesScanned());
@@ -369,7 +369,7 @@ final class SniffRunnerTest extends TestCase
         $config = $this->createConfig(sniffs: [new SniffEntry($sniff::class)]);
         $runner = new RunCoordinator();
 
-        $diff = new Diff([new FileChange(self::FIXTURE_DIR . '/file_a.xml', [])]);
+        $diff = new DiffChangeset([new FileChange(self::FIXTURE_DIR . '/file_a.xml', [])]);
         $report = $runner->run($this->planDiff($config, $diff));
 
         self::assertSame(1, $report->getFilesScanned());
@@ -382,7 +382,7 @@ final class SniffRunnerTest extends TestCase
         return new RunPlanner($config, $mode)->planPaths($paths ?? $config->getIncludePaths());
     }
 
-    private function planDiff(ConfigData $config, Diff $diff, RunMode $mode = RunMode::Sniff): RunPlan
+    private function planDiff(ConfigData $config, DiffChangeset $diff, RunMode $mode = RunMode::Sniff): RunPlan
     {
         return new RunPlanner($config, $mode)->planDiff($diff);
     }
