@@ -33,7 +33,7 @@ final class TrailingWhitespaceSniff extends AbstractSniff implements Fixable
             }
 
             [$whitespace, $relativeOffset] = $matches[0];
-            $beginOffset = $line->beginOffset + $relativeOffset;
+            $beginOffset = $line->beginOffset + (int) $relativeOffset;
 
             $violations[] = $this->createViolation(
                 $file->path,
