@@ -266,7 +266,7 @@ final class SimparaSniff extends AbstractSniff implements Fixable
             $sourceMatches[] = [
                 'beginOffset' => $start,
                 'untilOffset' => $untilOffset,
-                'content' => substr($file->content, $start, $untilOffset - $start),
+                'content' => substr($file->content, (int)$start, $untilOffset - $start),
                 'selfClosing' => false,
                 'affectedRanges' => [
                     $opening['range'],
