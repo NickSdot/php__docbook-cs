@@ -41,6 +41,19 @@ final class XmlFileProcessorTest extends TestCase
     }
 
     #[Test]
+    public function itReportsParseErrorsOutsideChangedSourceRanges(): void
+    {
+        $report = $this->process(
+            $this->processor(),
+            '<broken><unclosed>',
+            'bad.xml',
+            new FileChange('bad.xml', [99]),
+        );
+
+        $this->assertInternalError($report, 'XML parse error');
+    }
+
+    #[Test]
     public function itStoresTheProvidedFilePathInFileReports(): void
     {
         $filePath = (getcwd() ?: '') . '/nonexistent/path/file.xml';

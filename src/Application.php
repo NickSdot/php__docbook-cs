@@ -7,7 +7,6 @@ namespace DocbookCS;
 use DocbookCS\Config\ConfigData;
 use DocbookCS\Config\ConfigParser;
 use DocbookCS\Config\ConfigParserException;
-use DocbookCS\Diff\DiffParser;
 use DocbookCS\Progress\ConsoleProgress;
 use DocbookCS\Progress\NullProgress;
 use DocbookCS\Progress\ProgressInterface;
@@ -15,9 +14,9 @@ use DocbookCS\Report\Reporter\CheckstyleReporter;
 use DocbookCS\Report\Reporter\ConsoleReporter;
 use DocbookCS\Report\Reporter\JsonReporter;
 use DocbookCS\Report\Reporter\ReporterInterface;
-use DocbookCS\Runner\RunMode;
-use DocbookCS\Runner\RunOptions;
 use DocbookCS\Runner\RunCoordinator;
+use DocbookCS\Runner\RunMode;
+use DocbookCS\Runner\RunPlanner;
 
 final class Application
 {
@@ -34,21 +33,50 @@ final class Application
     /** @var resource */
     private $stderr;
 
-    /** @var resource */
-    private $stdin;
+    private ?string $stdin;
+
+    /**
+     * @param list<string> $argv
+     * @throws \RuntimeException if redirected stdin cannot be read.
+     * @api
+     */
+    public static function fromGlobals(array $argv): self
+    {
+        $stdin = null;
+        $stat = fstat(STDIN);
+
+        if ($stat === false) {
+            return new self($argv, stdin: $stdin);
+        }
+
+        $type = $stat['mode'] & 0170000;
+
+        if ($type === 0010000 || $type === 0100000) {
+            $stdin = stream_get_contents(STDIN);
+
+            if ($stdin === false) {
+                throw new \RuntimeException('Could not read diff from stdin.');
+            }
+        }
+
+        return new self($argv, stdin: $stdin);
+    }
 
     /**
      * @param list<string> $argv
      * @param ?resource $stdout
      * @param ?resource $stderr
-     * @param ?resource $stdin
      */
-    public function __construct(array $argv, mixed $stdout = null, mixed $stderr = null, mixed $stdin = null)
-    {
+    public function __construct(
+        array $argv,
+        mixed $stdout = null,
+        mixed $stderr = null,
+        ?string $stdin = null,
+    ) {
         $this->argv = $argv;
         $this->stdout = $stdout ?? STDOUT;
         $this->stderr = $stderr ?? STDERR;
-        $this->stdin = $stdin ?? STDIN;
+        $this->stdin = $stdin;
     }
 
     /**
@@ -56,7 +84,13 @@ final class Application
      */
     public function run(): int
     {
-        $options = $this->parseArgv();
+        try {
+            $options = $this->parseArgv();
+        } catch (\InvalidArgumentException $e) {
+            $this->writeError('Error: ' . $e->getMessage() . PHP_EOL);
+
+            return 2;
+        }
 
         if ($options['help']) {
             $this->printHelp();
@@ -78,38 +112,22 @@ final class Application
             return 2;
         }
 
-        $overridePaths = $options['paths'] !== [] ? $options['paths'] : null;
+        try {
+            $runPlan = new RunPlanner(
+                config: $config,
+                mode: RunMode::fromFixFlag($options['fix']),
+                wide: $options['wide'],
+            )->plan($options['paths'], $this->stdin);
+        } catch (\Throwable $e) {
+            $this->writeError('Error resolving input: ' . $e->getMessage() . PHP_EOL);
 
-        // If override paths are relative, resolve them against cwd.
-        if ($overridePaths !== null) {
-            $overridePaths = $this->resolveOverridePaths($overridePaths);
-        }
-
-        $diff = null;
-
-        if ($options['diff'] !== null) {
-            try {
-                $diffContent = $this->readDiff($options['diff']);
-                $diff = (new DiffParser())->parse($diffContent);
-            } catch (\Throwable $e) {
-                $this->writeError('Error reading diff: ' . $e->getMessage() . PHP_EOL);
-
-                return 2;
-            }
+            return 2;
         }
 
         $progress = $this->createProgress($options);
 
-        $runOptions = new RunOptions(
-            mode: RunMode::fromFixFlag($options['fix']),
-            overridePaths: $overridePaths,
-            diff: $diff,
-            strict: $options['strict'],
-        );
-
         try {
-            $runner = new RunCoordinator($progress);
-            $report = $runner->run($config, $runOptions);
+            $report = new RunCoordinator($progress)->run($runPlan);
         } catch (\Throwable $e) {
             $this->writeError('Runtime error: ' . $e->getMessage() . PHP_EOL);
 
@@ -128,27 +146,6 @@ final class Application
     }
 
     /**
-     * @param list<string> $paths
-     * @return list<string>
-     */
-    private function resolveOverridePaths(array $paths): array
-    {
-        $cwd = getcwd() ?: '.';
-        $resolved = [];
-
-        foreach ($paths as $path) {
-            if (str_starts_with($path, '/') || preg_match('#^[a-zA-Z]:[/\\\\]#', $path)) {
-                $resolved[] = $path;
-                continue;
-            }
-
-            $resolved[] = $cwd . '/' . $path;
-        }
-
-        return $resolved;
-    }
-
-    /**
      * @return array{
      *     help: bool,
      *     version: bool,
@@ -156,12 +153,12 @@ final class Application
      *     report: string,
      *     colors: bool,
      *     fix: bool,
-     *     strict: bool,
+     *     wide: bool,
      *     quiet: bool,
      *     paths: list<string>,
-     *     diff: string|null,
      *     perf: bool,
      * }
+     * @throws \InvalidArgumentException for unsupported or removed options.
      */
     private function parseArgv(): array
     {
@@ -172,10 +169,9 @@ final class Application
             'report' => 'console',
             'colors' => $this->detectColorSupport(),
             'fix' => false,
-            'strict' => false,
+            'wide' => false,
             'quiet' => false,
             'paths' => [],
-            'diff' => null,
             'perf' => false,
         ];
 
@@ -240,21 +236,6 @@ final class Application
                 continue;
             }
 
-            // --diff        = read from stdin
-            // --diff=FILE   = read from file
-            // --diff=-      = read from stdin (explicit)
-            if ($arg === '--diff') {
-                $result['diff'] = '';
-                $i++;
-                continue;
-            }
-
-            if (str_starts_with($arg, '--diff=')) {
-                $result['diff'] = substr($arg, 7);
-                $i++;
-                continue;
-            }
-
             if ($arg === '--perf') {
                 $result['perf'] = true;
                 $i++;
@@ -267,8 +248,8 @@ final class Application
                 continue;
             }
 
-            if ($arg === '--strict') {
-                $result['strict'] = true;
+            if ($arg === '--wide') {
+                $result['wide'] = true;
                 $i++;
                 continue;
             }
@@ -276,31 +257,14 @@ final class Application
             // Anything else is a path to scan.
             if (!str_starts_with($arg, '-')) {
                 $result['paths'][] = $arg;
+                $i++;
+                continue;
             }
 
-            $i++;
+            throw new \InvalidArgumentException(sprintf('Unknown option: %s', $arg));
         }
 
         return $result;
-    }
-
-    /** @throws \RuntimeException if the source cannot be read. */
-    private function readDiff(string $source): string
-    {
-        if ($source === '' || $source === '-') {
-            $content = stream_get_contents($this->stdin);
-            if ($content === false) {
-                throw new \RuntimeException('Could not read diff from stdin.'); // @codeCoverageIgnore
-            }
-            return $content;
-        }
-
-        $content = @file_get_contents($source);
-        if ($content === false) {
-            throw new \RuntimeException(sprintf('Could not read diff file: %s', $source));
-        }
-
-        return $content;
     }
 
     /** @param array{report: string, quiet: bool, colors: bool} $options */
@@ -407,30 +371,27 @@ Options:
   --report=<format>     Output format: console (default), checkstyle, json.
   --colors              Force ANSI color output.
   --no-colors           Disable ANSI color output.
-  --diff[=<file>]       Restrict analysis to files changed in a unified diff.
-                        Omit the value or pass "-" to read the diff from stdin.
-                        Violations are reported when their source range
-                        intersects a changed line.
-  --fix                 Automatically fixes violations when related the fixers
-                        exist (experimental).
-  --strict              Limit scanning to the selected paths or diff files;
-                        do not add referenced entity target files.
+  --fix                 Automatically fix violations when fixers exist
+                        (experimental).
+  --wide                Check whole selected files and recursively include
+                        referenced XML files.
 
 Arguments:
   <file-or-directory>   One or more files or directories to scan.
-                        If omitted, the paths from the config file are used.
-                        Referenced entity targets are included unless --strict
-                        is set.
+                        Paths cannot be combined with diff input.
 
 Examples:
   docbook-cs
   docbook-cs --config=myconfig.xml reference/
   docbook-cs --report=checkstyle --no-colors > report.xml
+  docbook-cs . --fix
+  docbook-cs reference/
   docbook-cs reference/strings/functions/strlen.xml
-  git diff HEAD | docbook-cs --diff --report=checkstyle
-  git diff HEAD | docbook-cs --diff --fix
-  git diff HEAD | docbook-cs --diff --fix --strict
-  docbook-cs --diff=changes.patch --report=json
+  docbook-cs reference/strings/functions/strlen.xml  --wide
+  docbook-cs reference/strings/functions/strlen.xml  --wide --fix
+  git diff HEAD | docbook-cs
+  git diff HEAD | docbook-cs --wide
+  git diff HEAD | docbook-cs --wide --fix --report=checkstyle
 
 HELP;
 

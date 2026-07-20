@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DocbookCS\Tests\Unit\Runner;
 
+use DocbookCS\Config\ConfigData;
 use DocbookCS\Diff\Diff;
 use DocbookCS\Diff\FileChange;
 use DocbookCS\Path\PathMatcher;
@@ -44,32 +45,28 @@ final class RunScopeResolverTest extends TestCase
     }
 
     #[Test]
-    public function strictScopeKeepsOnlySelectedFilesAndDiffLines(): void
+    public function narrowScopeKeepsOnlySelectedFilesAndDiffLines(): void
     {
         $resolver = $this->resolver();
 
-        $targets = $resolver->resolve(
-            [$this->sourceFile],
+        $targets = $resolver->resolveDiff(
             new Diff([new FileChange('source.xml', [2, 3])]),
-            strict: true,
         );
 
-        self::assertSame([2, 3], $targets[$this->sourceFile]?->lineNumbers);
+        self::assertSame([2, 3], $targets[$this->sourceFile]?->addedLineNumbers);
         self::assertCount(1, $targets);
     }
 
     #[Test]
-    public function expandedScopeFollowsReferencedTargetsWithoutWideningDiffLines(): void
+    public function wideScopeWidensSelectedFilesAndFollowsReferencedTargets(): void
     {
-        $resolver = $this->resolver();
+        $resolver = $this->resolver(wide: true);
 
-        $targets = $resolver->resolve(
-            [$this->sourceFile],
+        $targets = $resolver->resolveDiff(
             new Diff([new FileChange('source.xml', [2, 3])]),
-            strict: false,
         );
 
-        self::assertSame([2, 3], $targets[$this->sourceFile]?->lineNumbers);
+        self::assertNull($targets[$this->sourceFile]);
         self::assertNull($targets[$this->targetFile]);
         self::assertCount(2, $targets);
     }
@@ -78,26 +75,52 @@ final class RunScopeResolverTest extends TestCase
     public function expandedScopeHonorsTargetExclusions(): void
     {
         $resolver = new RunScopeResolver(
-            new PathMatcher($this->directory, ['target.xml']),
+            $this->config(['target.xml']),
             [
                 'bridge' => $this->entityFile,
                 'target' => $this->targetFile,
             ],
+            wide: true,
         );
 
-        $targets = $resolver->resolve([$this->sourceFile], null, strict: false);
+        $targets = $resolver->resolvePaths([$this->sourceFile]);
 
         self::assertSame([$this->sourceFile => null], $targets);
     }
 
-    private function resolver(): RunScopeResolver
+    #[Test]
+    public function pathScopeResolvesRelativePathsAgainstTheWorkingDirectory(): void
+    {
+        $path = 'tests/fixtures/sniff_runner/default/file_a.xml';
+        $absolutePath = (getcwd() ?: '.') . '/' . $path;
+
+        $targets = $this->resolver()->resolvePaths([$path]);
+
+        self::assertSame([$absolutePath => null], $targets);
+    }
+
+    private function resolver(bool $wide = false): RunScopeResolver
     {
         return new RunScopeResolver(
-            new PathMatcher($this->directory, []),
+            $this->config(),
             [
                 'bridge' => $this->entityFile,
                 'target' => $this->targetFile,
             ],
+            $wide,
+        );
+    }
+
+    /** @param list<string> $excludePatterns */
+    private function config(array $excludePatterns = []): ConfigData
+    {
+        return new ConfigData(
+            projectRoots: [],
+            sniffs: [],
+            includePaths: [$this->sourceFile],
+            excludePatterns: $excludePatterns,
+            entityPaths: [],
+            basePath: $this->directory,
         );
     }
 }

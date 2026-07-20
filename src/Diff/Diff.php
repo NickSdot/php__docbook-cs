@@ -7,7 +7,7 @@ namespace DocbookCS\Diff;
 final readonly class Diff
 {
     /** @param list<FileChange> $fileChanges */
-    public function __construct(private array $fileChanges)
+    public function __construct(public array $fileChanges)
     {
     }
 

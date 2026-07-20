@@ -21,8 +21,9 @@ use DocbookCS\Report\Reporter\ConsoleReporter;
 use DocbookCS\Report\Reporter\JsonReporter;
 use DocbookCS\Runner\EntityPreprocessor;
 use DocbookCS\Runner\RunMode;
-use DocbookCS\Runner\RunOptions;
 use DocbookCS\Runner\RunCoordinator;
+use DocbookCS\Runner\RunPlan;
+use DocbookCS\Runner\RunPlanner;
 use DocbookCS\Runner\ViolationScopeFilter;
 use DocbookCS\Runner\XmlFileProcessor;
 use DocbookCS\Sniff\ExceptionNameSniff;
@@ -44,8 +45,9 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(ConsoleReporter::class)]
 #[CoversClass(EntityPreprocessor::class)]
 #[CoversClass(RunMode::class)]
-#[CoversClass(RunOptions::class)]
 #[CoversClass(RunCoordinator::class)]
+#[CoversClass(RunPlan::class)]
+#[CoversClass(RunPlanner::class)]
 #[CoversClass(XmlFileProcessor::class)]
 #[CoversClass(CheckstyleReporter::class)]
 #[CoversClass(JsonReporter::class)]
@@ -289,115 +291,70 @@ final class ApplicationTest extends TestCase
     }
 
     #[Test]
-    public function itSupportsDiffFromFile(): void
+    public function itRejectsAValuelessDiffOption(): void
     {
-        $diffFile = tempnam(sys_get_temp_dir(), 'docbookcs_test_');
-        self::assertIsString($diffFile);
-
-        // Diff that references no XML files the config would normally scan.
-        file_put_contents($diffFile, <<<'DIFF'
-diff --git a/nonexistent.xml b/nonexistent.xml
---- a/nonexistent.xml
-+++ b/nonexistent.xml
-@@ -1,1 +1,2 @@
- line1
-+line2
-DIFF);
-
-        try {
-            $app = new Application(
-                ['docbook-cs', '--config=' . self::VALID_CONFIG, "--diff={$diffFile}"],
-                $this->stdout,
-                $this->stderr,
-            );
-
-            $exitCode = $app->run();
-
-            // No matching files → no violations → exit 0.
-            self::assertSame(0, $exitCode);
-            self::assertSame('', $this->readStream($this->stderr));
-        } finally {
-            unlink($diffFile);
-        }
-    }
-
-    #[Test]
-    public function itSupportsDiffFromStdin(): void
-    {
-        $stdin = fopen('php://memory', 'rb+');
-        self::assertIsResource($stdin);
-
-        fwrite($stdin, <<<'DIFF'
-diff --git a/nonexistent.xml b/nonexistent.xml
---- a/nonexistent.xml
-+++ b/nonexistent.xml
-@@ -1,1 +1,2 @@
- line1
-+line2
-DIFF);
-        rewind($stdin);
-
         $app = new Application(
             ['docbook-cs', '--config=' . self::VALID_CONFIG, '--diff'],
             $this->stdout,
             $this->stderr,
-            $stdin,
         );
 
-        $exitCode = $app->run();
+        self::assertSame(2, $app->run());
+        self::assertStringContainsString(
+            'Unknown option: --diff',
+            $this->readStream($this->stderr),
+        );
+    }
 
-        self::assertSame(0, $exitCode);
+    #[Test]
+    public function itDetectsAPipedDiffWithoutAFlag(): void
+    {
+        $app = new Application(
+            ['docbook-cs', '--config=' . self::VALID_CONFIG],
+            $this->stdout,
+            $this->stderr,
+            stdin: '',
+        );
+
+        self::assertSame(0, $app->run());
         self::assertSame('', $this->readStream($this->stderr));
     }
 
     #[Test]
-    public function itSupportsDiffFromStdinWithExplicitDash(): void
+    public function itRejectsPathsCombinedWithAPipedDiff(): void
     {
-        $stdin = fopen('php://memory', 'rb+');
-        self::assertIsResource($stdin);
-
-        fwrite($stdin, '');
-        rewind($stdin);
-
         $app = new Application(
-            ['docbook-cs', '--config=' . self::VALID_CONFIG, '--diff=-'],
+            ['docbook-cs', '--config=' . self::VALID_CONFIG, self::SCAN_FILE],
             $this->stdout,
             $this->stderr,
-            $stdin,
+            stdin: '',
         );
 
-        $exitCode = $app->run();
-
-        self::assertSame(0, $exitCode);
+        self::assertSame(2, $app->run());
+        self::assertStringContainsString(
+            'Paths cannot be combined with diff input',
+            $this->readStream($this->stderr),
+        );
     }
 
     #[Test]
-    public function itReturnsErrorWhenDiffFileCannotBeRead(): void
+    public function itTreatsStrictAsAnUnknownOption(): void
     {
         $app = new Application(
-            ['docbook-cs', '--config=' . self::VALID_CONFIG, '--diff=/nonexistent/path.patch'],
+            ['docbook-cs', '--strict'],
             $this->stdout,
             $this->stderr,
         );
 
-        $exitCode = $app->run();
-
-        self::assertSame(2, $exitCode);
-        self::assertStringContainsString('Error reading diff', $this->readStream($this->stderr));
+        self::assertSame(2, $app->run());
+        self::assertStringContainsString(
+            'Unknown option: --strict',
+            $this->readStream($this->stderr),
+        );
     }
 
     #[Test]
-    public function itIncludesDiffOptionInHelp(): void
-    {
-        $app = new Application(['docbook-cs', '--help'], $this->stdout, $this->stderr);
-
-        $app->run();
-
-        self::assertStringContainsString('--diff', $this->readStream($this->stdout));
-    }
-
-    #[Test]
-    public function itIncludesFixAndStrictOptionsInHelp(): void
+    public function itIncludesFixAndWideOptionsInHelp(): void
     {
         $app = new Application(['docbook-cs', '--help'], $this->stdout, $this->stderr);
 
@@ -406,7 +363,7 @@ DIFF);
         $output = $this->readStream($this->stdout);
 
         self::assertStringContainsString('--fix', $output);
-        self::assertStringContainsString('--strict', $output);
+        self::assertStringContainsString('--wide', $output);
     }
 
     #[Test]

@@ -66,14 +66,24 @@ Register it in your config:
 
 ## CLI Scope
 
-By default, DocbookCS scans the selected files and any XML files reached through
-referenced `SYSTEM` entities. `--strict` limits the run to exactly the files or
-directories selected on the command line or in the configuration.
+By default, DocbookCS checks the current Git diff from its upstream branch point
+through the working tree. Alternatively, a unified diff can be piped or file and
+directory paths passed. The inspection scope is limited to the given diff or the
+full contents of the given file paths.
 
-With `--diff`, source files remain restricted to violations whose source range
-intersects an added line. Referenced target files are scanned as whole files
-unless `--strict` is set. An atomic fix may update every affected range of a
-selected violation, such as both names of a matching opening and closing tag.
+XML references are expanded by default, but violations and fixes remain limited
+to the given scope. With `--wide`, every file, inferred from paths or diff, as
+a whole will be checked and referenced `SYSTEM` XML files recursively included
+in violation reports and fixing.
+
+| Input      | `--wide` | Full File(s) | References |
+|------------|---------:|-------------:|-----------:|
+| none       |       no |           no |         no |
+| none       |      yes |          yes |        yes |
+| path       |       no |          yes |         no |
+| path       |      yes |          yes |        yes |
+| piped diff |       no |           no |         no |
+| piped diff |      yes |          yes |        yes |
 
 ## License
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DocbookCS\Tests\Unit\Runner;
 
+use DocbookCS\Diff\FileChange;
 use DocbookCS\Fix\Fix;
 use DocbookCS\Runner\SourceScope;
 use DocbookCS\Source\File;
@@ -23,7 +24,7 @@ final class SourceScopeTest extends TestCase
     public function itIncludesOnlyViolationsIntersectingChangedLines(): void
     {
         $file = new File('file.xml', "one\ntwo\nthree");
-        $scope = SourceScope::changedLines($file, [2]);
+        $scope = SourceScope::fromFileChange($file, new FileChange('file.xml', [2]));
 
         self::assertFalse($scope->isWholeFile());
         self::assertSame([2], $scope->lineNumbers($file));
@@ -45,7 +46,7 @@ final class SourceScopeTest extends TestCase
     public function anEmptyChangedLineSetSelectsNoLines(): void
     {
         $file = new File('file.xml', "one\ntwo\nthree");
-        $scope = SourceScope::changedLines($file, []);
+        $scope = SourceScope::fromFileChange($file, new FileChange('file.xml', []));
 
         self::assertSame([], $scope->lineNumbers($file));
     }
@@ -54,7 +55,7 @@ final class SourceScopeTest extends TestCase
     public function itKeepsScopeAlignedAfterAnInsertionBeforeIt(): void
     {
         $file = new File('file.xml', "one\ntwo\nthree");
-        $scope = SourceScope::changedLines($file, [2]);
+        $scope = SourceScope::fromFileChange($file, new FileChange('file.xml', [2]));
         $scope = $scope->after([
             new Fix('file.xml', 0, 0, "x\n", 'Test'),
         ]);
@@ -70,7 +71,7 @@ final class SourceScopeTest extends TestCase
     public function itIncludesContentInsertedIntoAnEmptySelectedLine(): void
     {
         $file = new File('file.xml', "root\n");
-        $scope = SourceScope::changedLines($file, [2]);
+        $scope = SourceScope::fromFileChange($file, new FileChange('file.xml', [2]));
         $scope = $scope->after([
             new Fix('file.xml', 5, 5, 'value', 'Test'),
         ]);
@@ -82,7 +83,7 @@ final class SourceScopeTest extends TestCase
     public function itSortsFixesBeforeMappingScopeOffsets(): void
     {
         $file = new File('file.xml', "one\ntwo\nthree");
-        $scope = SourceScope::changedLines($file, [2]);
+        $scope = SourceScope::fromFileChange($file, new FileChange('file.xml', [2]));
         $scope = $scope->after([
             new Fix('file.xml', 13, 13, "\nfour", 'Test'),
             new Fix('file.xml', 0, 0, "zero\n", 'Test'),
@@ -90,6 +91,31 @@ final class SourceScopeTest extends TestCase
         $file = $file->withContent("zero\none\ntwo\nthree\nfour");
 
         self::assertSame([3], $scope->lineNumbers($file));
+    }
+
+    #[Test]
+    public function itIncludesAViolationContainingADeletionLocation(): void
+    {
+        $file = new File('file.xml', "<root>\n<para>\nText\n</para>\n</root>");
+        $scope = SourceScope::fromFileChange(
+            $file,
+            new FileChange('file.xml', [], deletionAnchors: [3]),
+        );
+
+        self::assertTrue($scope->includes($this->violation(7, 27, 2)));
+        self::assertFalse($scope->includes($this->violation(0, 6, 1)));
+    }
+
+    #[Test]
+    public function itAnchorsADeletionAtTheEndOfTheFile(): void
+    {
+        $file = new File('file.xml', "<root/>\n");
+        $scope = SourceScope::fromFileChange(
+            $file,
+            new FileChange('file.xml', [], deletionAnchors: [2]),
+        );
+
+        self::assertTrue($scope->includes($this->violation(0, strlen($file->content) + 1, 1)));
     }
 
     private function violation(int $beginOffset, int $untilOffset, int $line): Violation

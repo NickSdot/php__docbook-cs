@@ -61,4 +61,34 @@ XML;
             @unlink($filePath);
         }
     }
+
+    #[Test]
+    public function itFixesAViolationCausedByADeletedLine(): void
+    {
+        $source = <<<'XML'
+<root>
+<para>
+Text
+</para>
+</root>
+XML;
+        $expected = <<<'XML'
+<root>
+<simpara>
+Text
+</simpara>
+</root>
+XML;
+        $processor = new XmlFileProcessor([
+            new SimparaSniff(RunMode::Fix),
+        ]);
+
+        $result = $processor->process(
+            new File('file.xml', $source),
+            new FileChange('file.xml', [], deletionAnchors: [3]),
+        );
+
+        self::assertSame($expected, $result->fixedContent());
+        self::assertFalse($result->fileReport->hasViolations());
+    }
 }

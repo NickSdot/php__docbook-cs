@@ -6,12 +6,16 @@ namespace DocbookCS\Tests\Integration\Runner;
 
 use DocbookCS\Config\ConfigData;
 use DocbookCS\Config\SniffEntry;
+use DocbookCS\Diff\Diff;
+use DocbookCS\Diff\FileChange;
+use DocbookCS\Path\DiffPathLoader;
 use DocbookCS\Path\EntityResolver;
 use DocbookCS\Path\PathLoader;
 use DocbookCS\Path\PathMatcher;
+use DocbookCS\Report\Report;
 use DocbookCS\Runner\RunCoordinator;
 use DocbookCS\Runner\RunMode;
-use DocbookCS\Runner\RunOptions;
+use DocbookCS\Runner\RunPlanner;
 use DocbookCS\Runner\RunScopeResolver;
 use DocbookCS\Sniff\SimparaSniff;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -19,9 +23,11 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(EntityResolver::class)]
+#[CoversClass(DiffPathLoader::class)]
 #[CoversClass(PathLoader::class)]
 #[CoversClass(PathMatcher::class)]
 #[CoversClass(RunCoordinator::class)]
+#[CoversClass(RunPlanner::class)]
 #[CoversClass(RunScopeResolver::class)]
 final class RunScopeTest extends TestCase
 {
@@ -53,14 +59,21 @@ final class RunScopeTest extends TestCase
     }
 
     #[Test]
-    public function itExpandsReferencedTargetsUnlessStrictScopeIsRequested(): void
+    public function itExpandsReferencedTargetsOnlyWhenWideScopeIsRequested(): void
     {
-        $runner = new RunCoordinator();
+        $config = $this->config();
 
-        self::assertSame(2, $runner->run($this->config())->getFilesScanned());
         self::assertSame(
             1,
-            $runner->run($this->config(), new RunOptions(strict: true))->getFilesScanned(),
+            $this->executePaths($config, [$this->sourceFile])->getFilesScanned(),
+        );
+        self::assertSame(
+            2,
+            $this->executePaths(
+                $config,
+                [$this->sourceFile],
+                wide: true,
+            )->getFilesScanned(),
         );
     }
 
@@ -72,11 +85,60 @@ final class RunScopeTest extends TestCase
             new SniffEntry(SimparaSniff::class),
         ]);
 
-        $report = new RunCoordinator()->run($config, new RunOptions(mode: RunMode::Fix));
+        $report = $this->executePaths(
+            $config,
+            [$this->sourceFile],
+            mode: RunMode::Fix,
+            wide: true,
+        );
 
         self::assertSame('<root>&target;</root>', file_get_contents($this->sourceFile));
         self::assertSame('<simpara>Text</simpara>', file_get_contents($this->targetFile));
         self::assertFalse($report->hasViolations());
+    }
+
+    #[Test]
+    public function aDiffProvidesItsOwnFilesWithoutConfiguredIncludePaths(): void
+    {
+        $config = new ConfigData(
+            projectRoots: [],
+            sniffs: [],
+            includePaths: [],
+            excludePatterns: [],
+            entityPaths: [],
+            basePath: $this->directory,
+        );
+
+        $report = $this->executeDiff(
+            $config,
+            new Diff([
+                new FileChange($this->sourceFile, [1]),
+            ]),
+        );
+
+        self::assertSame(1, $report->getFilesScanned());
+    }
+
+    #[Test]
+    public function aDiffPathUsingAProjectDirectoryKeepsItsSourceRanges(): void
+    {
+        $config = new ConfigData(
+            projectRoots: [$this->directory => 'docs'],
+            sniffs: [],
+            includePaths: [],
+            excludePatterns: [],
+            entityPaths: [],
+            basePath: $this->directory,
+        );
+
+        $report = $this->executeDiff(
+            $config,
+            new Diff([
+                new FileChange('docs/source.xml', [1]),
+            ]),
+        );
+
+        self::assertSame(1, $report->getFilesScanned());
     }
 
     /** @param list<SniffEntry> $sniffs */
@@ -89,6 +151,29 @@ final class RunScopeTest extends TestCase
             excludePatterns: [],
             entityPaths: [$this->entityFile],
             basePath: $this->directory,
+        );
+    }
+
+    /** @param list<string> $paths */
+    private function executePaths(
+        ConfigData $config,
+        array $paths,
+        RunMode $mode = RunMode::Sniff,
+        bool $wide = false,
+    ): Report {
+        return new RunCoordinator()->run(
+            new RunPlanner($config, $mode, $wide)->planPaths($paths),
+        );
+    }
+
+    private function executeDiff(
+        ConfigData $config,
+        Diff $diff,
+        RunMode $mode = RunMode::Sniff,
+        bool $wide = false,
+    ): Report {
+        return new RunCoordinator()->run(
+            new RunPlanner($config, $mode, $wide)->planDiff($diff),
         );
     }
 }

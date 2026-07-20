@@ -4,48 +4,102 @@ declare(strict_types=1);
 
 namespace DocbookCS\Runner;
 
+use DocbookCS\Config\ConfigData;
 use DocbookCS\Diff\Diff;
 use DocbookCS\Diff\FileChange;
+use DocbookCS\Path\DiffPathLoader;
+use DocbookCS\Path\PathLoader;
 use DocbookCS\Path\PathMatcher;
 
 final readonly class RunScopeResolver
 {
     private const string ENTITY_PATTERN = '/&([a-zA-Z_][\w.\-]*);/';
 
+    private PathMatcher $pathMatcher;
+
     /** @param array<string, string> $entityPaths */
     public function __construct(
-        private PathMatcher $pathMatcher,
+        private ConfigData $config,
         private array $entityPaths,
+        private bool $wide = false,
     ) {
+        $this->pathMatcher = new PathMatcher(
+            $config->getBasePath(),
+            $config->getExcludePatterns(),
+        );
     }
 
     /**
-     * @param list<string> $files
+     * @param list<string> $paths
      * @return array<string, FileChange|null>
+     * @throws \UnexpectedValueException if a selected directory cannot be read.
      */
-    public function resolve(array $files, ?Diff $diff, bool $strict): array
+    public function resolvePaths(array $paths): array
     {
         $targets = [];
 
-        foreach ($files as $file) {
-            if ($diff === null) {
-                $targets[$file] = null;
-                continue;
-            }
-
-            $fileChange = $diff->changeFor($file);
-            if ($fileChange !== null) {
-                $targets[$file] = $fileChange;
-            }
+        foreach (new PathLoader($this->absolutePaths($paths), $this->pathMatcher)->loadPaths() as $file) {
+            $targets[$file] = null;
         }
 
-        if (!$strict) {
+        return $this->finalize($targets);
+    }
+
+    /** @return array<string, FileChange|null> */
+    public function resolveDiff(Diff $diff): array
+    {
+        $resolvedDiff = new DiffPathLoader(
+            $diff,
+            getcwd() ?: '.',
+            $this->config->getBasePath(),
+            $this->config->getProjectRoots(),
+            $this->pathMatcher,
+        )->load();
+
+        $targets = [];
+
+        foreach ($resolvedDiff->fileChanges as $fileChange) {
+            $targets[$fileChange->filePath] = $fileChange;
+        }
+
+        return $this->finalize($targets);
+    }
+
+    /**
+     * @param array<string, FileChange|null> $targets
+     * @return array<string, FileChange|null>
+     */
+    private function finalize(array $targets): array
+    {
+        if ($this->wide) {
+            $targets = array_fill_keys(array_keys($targets), null);
             $this->expandReferencedTargets($targets);
         }
 
         ksort($targets);
 
         return $targets;
+    }
+
+    /**
+     * @param list<string> $paths
+     * @return list<string>
+     */
+    private function absolutePaths(array $paths): array
+    {
+        $workingDirectory = getcwd() ?: '.';
+        $absolutePaths = [];
+
+        foreach ($paths as $path) {
+            if (str_starts_with($path, '/') || preg_match('#^[a-zA-Z]:[/\\\\]#', $path)) {
+                $absolutePaths[] = $path;
+                continue;
+            }
+
+            $absolutePaths[] = $workingDirectory . '/' . $path;
+        }
+
+        return $absolutePaths;
     }
 
     /** @param array<string, FileChange|null> $targets */

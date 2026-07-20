@@ -49,7 +49,7 @@ final readonly class XmlFileProcessor
         $currentFile = $initialFile;
         $scope = $fileChange === null
             ? SourceScope::wholeFile()
-            : SourceScope::changedLines($initialFile, $fileChange->lineNumbers);
+            : SourceScope::fromFileChange($initialFile, $fileChange);
         $seenContentHashes = [hash('sha256', $currentFile->content) => true];
         $fixPasses = 0;
 

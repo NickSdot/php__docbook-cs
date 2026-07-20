@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DocbookCS\Runner;
 
+use DocbookCS\Diff\FileChange;
 use DocbookCS\Fix\Fix;
 use DocbookCS\Source\File;
 use DocbookCS\Source\Line;
@@ -25,25 +26,41 @@ final readonly class SourceScope
         return new self(null);
     }
 
-    /** @param list<int> $lines */
-    public static function changedLines(File $file, array $lines): self
+    public static function fromFileChange(File $file, FileChange $fileChange): self
     {
-        $selectedLines = array_fill_keys($lines, true);
+        $selectedLines = array_fill_keys($fileChange->addedLineNumbers, true);
         $ranges = [];
+        $lineBeginOffsets = [];
+        $lastLineNumber = 1;
 
         foreach ($file->lines() as $line) {
-            if (!isset($selectedLines[$line->number])) {
+            $lineBeginOffsets[$line->number] = $line->beginOffset;
+            $lastLineNumber = $line->number;
+
+            if (isset($selectedLines[$line->number])) {
+                $ranges[] = [$line->beginOffset, $line->offsetAfterLine()];
+            }
+        }
+
+        foreach ($fileChange->deletionAnchors as $lineNumber) {
+            $offset = $lineBeginOffsets[$lineNumber]
+                ?? ($lineNumber === $lastLineNumber + 1 ? strlen($file->content) : null);
+
+            if ($offset === null) {
                 continue;
             }
 
-            self::appendRange(
-                $ranges,
-                $line->beginOffset,
-                $line->offsetAfterLine(),
-            );
+            $ranges[] = [$offset, $offset];
         }
 
-        return new self($ranges);
+        usort($ranges, static fn(array $a, array $b): int => $a <=> $b);
+
+        $normalisedRanges = [];
+        foreach ($ranges as [$beginOffset, $untilOffset]) {
+            self::appendRange($normalisedRanges, $beginOffset, $untilOffset);
+        }
+
+        return new self($normalisedRanges);
     }
 
     public function isWholeFile(): bool

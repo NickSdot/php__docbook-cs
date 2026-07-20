@@ -18,7 +18,8 @@ use DocbookCS\Report\Report;
 use DocbookCS\Runner\EntityPreprocessor;
 use DocbookCS\Runner\RunCoordinator;
 use DocbookCS\Runner\RunMode;
-use DocbookCS\Runner\RunOptions;
+use DocbookCS\Runner\RunPlan;
+use DocbookCS\Runner\RunPlanner;
 use DocbookCS\Runner\ViolationScopeFilter;
 use DocbookCS\Runner\XmlFileProcessor;
 use DocbookCS\Sniff\SniffInterface;
@@ -38,7 +39,8 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(EntityPreprocessor::class)]
 #[CoversClass(EntityResolver::class)]
 #[CoversClass(RunMode::class)]
-#[CoversClass(RunOptions::class)]
+#[CoversClass(RunPlan::class)]
+#[CoversClass(RunPlanner::class)]
 #[CoversClass(XmlFileProcessor::class)]
 #[CoversClass(Report::class)]
 #[CoversClass(SniffEntry::class)]
@@ -68,7 +70,7 @@ final class SniffRunnerTest extends TestCase
         $config = $this->createConfig();
 
         $runner = new RunCoordinator();
-        $report = $runner->run($config);
+        $report = $runner->run($this->planPaths($config));
 
         self::assertSame(2, $report->getFilesScanned());
         self::assertFalse($report->hasViolations());
@@ -81,7 +83,10 @@ final class SniffRunnerTest extends TestCase
         $config = $this->createConfig();
 
         $runner = new RunCoordinator();
-        $report = $runner->run($config, new RunOptions(overridePaths: [self::FIXTURE_DIR . '/../override']));
+        $report = $runner->run($this->planPaths(
+            $config,
+            [self::FIXTURE_DIR . '/../override'],
+        ));
 
         self::assertSame(1, $report->getFilesScanned());
     }
@@ -104,7 +109,7 @@ final class SniffRunnerTest extends TestCase
         $config = $this->createConfig();
 
         $runner = new RunCoordinator($progress);
-        $runner->run($config);
+        $runner->run($this->planPaths($config));
     }
 
     #[Test]
@@ -143,7 +148,7 @@ final class SniffRunnerTest extends TestCase
             basePath: dirname($xmlFilePath),
         );
 
-        $report = new RunCoordinator($progress)->run($config);
+        $report = new RunCoordinator($progress)->run($this->planPaths($config));
 
         self::assertTrue($report->hasViolations());
         self::assertSame('DocbookCS.Internal', $report->getAllViolations()[0]->sniffCode);
@@ -177,7 +182,7 @@ final class SniffRunnerTest extends TestCase
         );
         $diff = new Diff([new FileChange($xmlFilePath, [42])]);
 
-        $report = new RunCoordinator($progress)->run($config, new RunOptions(diff: $diff));
+        $report = new RunCoordinator($progress)->run($this->planDiff($config, $diff));
 
         self::assertTrue($report->hasViolations());
         self::assertSame('DocbookCS.Internal', $report->getAllViolations()[0]->sniffCode);
@@ -219,7 +224,7 @@ final class SniffRunnerTest extends TestCase
         $config = $this->createConfig(sniffs: [new SniffEntry($sniff::class)]);
 
         $runner = new RunCoordinator();
-        $report = $runner->run($config);
+        $report = $runner->run($this->planPaths($config));
 
         self::assertSame(2, $report->getFilesScanned());
         self::assertCount(2, $report->getFileReports());
@@ -262,7 +267,7 @@ final class SniffRunnerTest extends TestCase
         $config = $this->createConfig(sniffs: [new SniffEntry($sniff::class)]);
 
         $runner = new RunCoordinator();
-        $report = $runner->run($config);
+        $report = $runner->run($this->planPaths($config));
 
         foreach ($report->getFileReports() as $fileReport) {
             self::assertTrue(
@@ -303,7 +308,7 @@ final class SniffRunnerTest extends TestCase
         $config = $this->createConfig(sniffs: [new SniffEntry($sniffClass::class, ['someProp' => 'someValue'])]);
 
         $runner = new RunCoordinator();
-        $runner->run($config, new RunOptions(mode: RunMode::Fix));
+        $runner->run($this->planPaths($config, mode: RunMode::Fix));
 
         self::assertSame('someValue', $sniffClass::$captured);
         self::assertSame(RunMode::Fix, $sniffClass::$capturedMode);
@@ -319,7 +324,7 @@ final class SniffRunnerTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessageIsOrContains('does not exist');
 
-        $runner->run($config);
+        $runner->run($this->planPaths($config));
     }
 
     #[Test]
@@ -332,7 +337,7 @@ final class SniffRunnerTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessageIsOrContains('does not implement');
 
-        $runner->run($config);
+        $runner->run($this->planPaths($config));
     }
 
     #[Test]
@@ -341,8 +346,8 @@ final class SniffRunnerTest extends TestCase
         $config = $this->createConfig();
         $runner = new RunCoordinator();
 
-        $diff = new Diff([new FileChange('sniff_runner/default/file_a.xml', [1])]);
-        $report = $runner->run($config, new RunOptions(diff: $diff));
+        $diff = new Diff([new FileChange(self::FIXTURE_DIR . '/file_a.xml', [1])]);
+        $report = $runner->run($this->planDiff($config, $diff));
 
         self::assertSame(1, $report->getFilesScanned());
     }
@@ -354,7 +359,7 @@ final class SniffRunnerTest extends TestCase
         $runner = new RunCoordinator();
 
         $diff = new Diff([new FileChange('completely/different/file.xml', [1, 2, 3])]);
-        $report = $runner->run($config, new RunOptions(diff: $diff));
+        $report = $runner->run($this->planDiff($config, $diff));
 
         self::assertSame(0, $report->getFilesScanned());
     }
@@ -368,7 +373,7 @@ final class SniffRunnerTest extends TestCase
         $discoveredPath = self::FIXTURE_DIR . '/file_a.xml';
 
         $diff = new Diff([new FileChange($discoveredPath, [1])]);
-        $report = $runner->run($config, new RunOptions(diff: $diff));
+        $report = $runner->run($this->planDiff($config, $diff));
 
         self::assertSame(1, $report->getFilesScanned());
     }
@@ -379,7 +384,7 @@ final class SniffRunnerTest extends TestCase
         $config = $this->createConfig();
         $runner = new RunCoordinator();
 
-        $report = $runner->run($config);
+        $report = $runner->run($this->planPaths($config));
 
         self::assertSame(2, $report->getFilesScanned());
     }
@@ -420,10 +425,29 @@ final class SniffRunnerTest extends TestCase
         $config = $this->createConfig(sniffs: [new SniffEntry($sniff::class)]);
         $runner = new RunCoordinator();
 
-        $diff = new Diff([new FileChange('sniff_runner/default/file_a.xml', [])]);
-        $report = $runner->run($config, new RunOptions(diff: $diff));
+        $diff = new Diff([new FileChange(self::FIXTURE_DIR . '/file_a.xml', [])]);
+        $report = $runner->run($this->planDiff($config, $diff));
 
         self::assertSame(1, $report->getFilesScanned());
         self::assertFalse($report->hasViolations());
+    }
+
+    /** @param list<string>|null $paths */
+    private function planPaths(
+        ConfigData $config,
+        ?array $paths = null,
+        RunMode $mode = RunMode::Sniff,
+    ): RunPlan {
+        return new RunPlanner($config, $mode)->planPaths(
+            $paths ?? $config->getIncludePaths(),
+        );
+    }
+
+    private function planDiff(
+        ConfigData $config,
+        Diff $diff,
+        RunMode $mode = RunMode::Sniff,
+    ): RunPlan {
+        return new RunPlanner($config, $mode)->planDiff($diff);
     }
 }

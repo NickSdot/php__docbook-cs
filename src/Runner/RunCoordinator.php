@@ -4,12 +4,8 @@ declare(strict_types=1);
 
 namespace DocbookCS\Runner;
 
-use DocbookCS\Config\ConfigData;
 use DocbookCS\Config\SniffEntry;
 use DocbookCS\Fix\FixerException;
-use DocbookCS\Path\EntityResolver;
-use DocbookCS\Path\PathLoader;
-use DocbookCS\Path\PathMatcher;
 use DocbookCS\Progress\NullProgress;
 use DocbookCS\Progress\ProgressInterface;
 use DocbookCS\Report\FileReport;
@@ -30,43 +26,24 @@ final class RunCoordinator
 
     /**
      * @throws \RuntimeException if a sniff class cannot be found or does not implement SniffInterface.
-     * @throws \UnexpectedValueException if include or entity directories cannot be read.
      * @throws FixerException
      */
-    public function run(ConfigData $config, RunOptions $options = new RunOptions()): Report
+    public function run(RunPlan $plan): Report
     {
         $startTime = microtime(true);
 
-        $sniffs = $this->instantiateSniffs($config->getSniffs(), $options->mode);
-
-        $matcher = new PathMatcher($config->getBasePath(), $config->getExcludePatterns());
-
-        $entityResolver = new EntityResolver(
-            $config->getProjectRoots(),
-            $config->getEntityPaths(),
-        );
-        $entities = $entityResolver->resolve();
-
-        $includePaths = $options->overridePaths ?? $config->getIncludePaths();
-
-        $files = new PathLoader($includePaths, $matcher)->loadPaths();
-
-        $targets = new RunScopeResolver($matcher, $entityResolver->paths())->resolve(
-            $files,
-            $options->diff,
-            $options->strict,
-        );
+        $sniffs = $this->instantiateSniffs($plan->sniffs, $plan->mode);
 
         $report = new Report();
-        $preprocessor = new EntityPreprocessor($entities);
+        $preprocessor = new EntityPreprocessor($plan->entities);
         $processor = new XmlFileProcessor($sniffs, $preprocessor, $report);
 
-        $total = count($targets);
+        $total = count($plan->targets);
 
         $this->progress->start($total);
 
         $index = 0;
-        foreach ($targets as $filePath => $fileChange) {
+        foreach ($plan->targets as $filePath => $fileChange) {
             $report->incrementFilesScanned();
 
             $content = @file_get_contents($filePath);
