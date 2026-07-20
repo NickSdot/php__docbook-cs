@@ -24,10 +24,13 @@ final readonly class GitDiffProvider implements DiffProviderInterface
         ));
 
         $baseReference = $this->resolveBaseReference($repositoryRoot);
+
+        $error = sprintf('Unclear where HEAD branched from %s.', $baseReference);
+
         $mergeBase = $this->runOrThrow(
             ['git', 'merge-base', 'HEAD', $baseReference],
             $repositoryRoot,
-            sprintf('Unclear where HEAD branched from %s.', $baseReference),
+            $error,
         );
 
         return $this->runOrThrow(
@@ -70,7 +73,9 @@ final readonly class GitDiffProvider implements DiffProviderInterface
             }
         }
 
-        throw new \RuntimeException('Could not determine the upstream default branch for the contribution diff.');
+        throw new \RuntimeException(
+            'Could not determine the upstream default branch for the contribution diff.',
+        );
     }
 
     /**
@@ -87,6 +92,8 @@ final readonly class GitDiffProvider implements DiffProviderInterface
 
         $detail = trim($result->stderr);
 
-        throw new \RuntimeException($detail !== '' ? "$error $detail" : $error);
+        throw new \RuntimeException(
+            $detail !== '' ? "$error $detail" : $error,
+        );
     }
 }

@@ -17,15 +17,22 @@ use DocbookCS\Progress\NullProgress;
 use DocbookCS\Progress\ProgressInterface;
 use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
-use DocbookCS\Report\Severity;
-use DocbookCS\Report\Violation;
 use DocbookCS\Runner\EntityPreprocessor;
+use DocbookCS\Runner\RunCoordinator;
+use DocbookCS\Runner\RunMode;
 use DocbookCS\Runner\RunPlan;
 use DocbookCS\Runner\RunPlanner;
 use DocbookCS\Runner\RunScopeResolver;
-use DocbookCS\Runner\SniffRunner;
+use DocbookCS\Runner\SourceScope;
+use DocbookCS\Runner\ViolationScopeFilter;
 use DocbookCS\Runner\XmlFileProcessor;
+use DocbookCS\Runner\XmlProcessingResult;
 use DocbookCS\Sniff\SniffInterface;
+use DocbookCS\Source\File;
+use DocbookCS\Source\Line;
+use DocbookCS\Violation\Severity;
+use DocbookCS\Violation\SourceRange;
+use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -40,18 +47,25 @@ use PHPUnit\Framework\TestCase;
     CoversClass(PathLoader::class),
     CoversClass(PathMatcher::class),
     CoversClass(Report::class),
+    CoversClass(RunCoordinator::class),
+    CoversClass(RunMode::class),
     CoversClass(RunPlan::class),
     CoversClass(RunPlanner::class),
     CoversClass(SniffEntry::class),
-    CoversClass(SniffRunner::class),
     CoversClass(Violation::class),
     CoversClass(XmlFileProcessor::class),
     //
     UsesClass(Diff::class),
     UsesClass(DiffPathLoader::class),
+    UsesClass(File::class),
     UsesClass(FileChange::class),
     UsesClass(GitDiffProvider::class),
+    UsesClass(Line::class),
     UsesClass(RunScopeResolver::class),
+    UsesClass(SourceRange::class),
+    UsesClass(SourceScope::class),
+    UsesClass(ViolationScopeFilter::class),
+    UsesClass(XmlProcessingResult::class),
 ]
 final class SniffRunnerTest extends TestCase
 {
@@ -70,12 +84,12 @@ final class SniffRunnerTest extends TestCase
         );
     }
 
-    #[Test]
+    #[Test] // TODO: should be integration
     public function itProcessesFilesWithoutViolations(): void
     {
         $config = $this->createConfig();
 
-        $runner = new SniffRunner();
+        $runner = new RunCoordinator();
         $report = $runner->run($this->planPaths($config));
 
         self::assertSame(2, $report->getFilesScanned());
@@ -83,18 +97,21 @@ final class SniffRunnerTest extends TestCase
         self::assertCount(0, $report->getFileReports());
     }
 
-    #[Test]
+    #[Test] // TODO: should be integration
     public function itUsesOverridePathsWhenProvided(): void
     {
         $config = $this->createConfig();
 
-        $runner = new SniffRunner();
-        $report = $runner->run($this->planPaths($config, [self::FIXTURE_DIR . '/../override']));
+        $runner = new RunCoordinator();
+        $report = $runner->run($this->planPaths(
+            $config,
+            [self::FIXTURE_DIR . '/../override'],
+        ));
 
         self::assertSame(1, $report->getFilesScanned());
     }
 
-    #[Test]
+    #[Test] // TODO: should be integration
     public function itCallsProgressMethods(): void
     {
         $progress = $this->createMock(ProgressInterface::class);
@@ -111,26 +128,32 @@ final class SniffRunnerTest extends TestCase
 
         $config = $this->createConfig();
 
-        $runner = new SniffRunner($progress);
+        $runner = new RunCoordinator($progress);
         $runner->run($this->planPaths($config));
     }
 
-    #[Test]
+    #[Test] // TODO: should be integration
     public function itAddsFileReportsForFilesWithViolations(): void
     {
-        $sniff = new class implements SniffInterface {
-            public function getCode(): string
+        $sniff = new class (RunMode::Sniff) implements SniffInterface {
+            public function __construct(public RunMode $mode)
+            {
+            }
+
+            public static function getCode(): string
             {
                 return 'Test.ViolatingSniff';
             }
 
-            public function process(\DOMDocument $document, string $content, string $filePath): array
+            public function process(\DOMDocument $document, File $file): array
             {
                 return [
                     new Violation(
                         sniffCode: 'Test.ViolatingSniff',
-                        filePath: $filePath,
+                        filePath: $file->path,
                         line: 1,
+                        beginOffset: 0,
+                        untilOffset: 0,
                         message: 'Test violation message',
                         severity: Severity::WARNING,
                     ),
@@ -144,7 +167,7 @@ final class SniffRunnerTest extends TestCase
 
         $config = $this->createConfig(sniffs: [new SniffEntry($sniff::class)]);
 
-        $runner = new SniffRunner();
+        $runner = new RunCoordinator();
         $report = $runner->run($this->planPaths($config));
 
         self::assertSame(2, $report->getFilesScanned());
@@ -152,22 +175,28 @@ final class SniffRunnerTest extends TestCase
         self::assertTrue($report->hasViolations());
     }
 
-    #[Test]
+    #[Test] // TODO: should be integration
     public function itStoresAbsolutePathsInFileReports(): void
     {
-        $sniff = new class implements SniffInterface {
-            public function getCode(): string
+        $sniff = new class (RunMode::Sniff) implements SniffInterface {
+            public function __construct(public RunMode $mode)
+            {
+            }
+
+            public static function getCode(): string
             {
                 return 'Test.ViolatingSniff';
             }
 
-            public function process(\DOMDocument $document, string $content, string $filePath): array
+            public function process(\DOMDocument $document, File $file): array
             {
                 return [
                     new Violation(
                         sniffCode: 'Test.ViolatingSniff',
-                        filePath: $filePath,
+                        filePath: $file->path,
                         line: 1,
+                        beginOffset: 0,
+                        untilOffset: 0,
                         message: 'Test violation',
                         severity: Severity::WARNING,
                     ),
@@ -181,7 +210,7 @@ final class SniffRunnerTest extends TestCase
 
         $config = $this->createConfig(sniffs: [new SniffEntry($sniff::class)]);
 
-        $runner = new SniffRunner();
+        $runner = new RunCoordinator();
         $report = $runner->run($this->planPaths($config));
 
         foreach ($report->getFileReports() as $fileReport) {
@@ -192,23 +221,29 @@ final class SniffRunnerTest extends TestCase
         }
     }
 
-    #[Test]
+    #[Test] // TODO: should be integration
     public function itPassesPropertiesToSniffs(): void
     {
-        $sniffClass = new class implements SniffInterface {
+        $sniffClass = new class (RunMode::Sniff) implements SniffInterface {
             public static string $captured = '';
+            public static RunMode $capturedMode = RunMode::Sniff;
+
+            public function __construct(public RunMode $mode)
+            {
+                self::$capturedMode = $mode;
+            }
 
             public function setProperty(string $name, string $value): void
             {
                 self::$captured = $value;
             }
 
-            public function getCode(): string
+            public static function getCode(): string
             {
                 return 'Test.ConfigurableSniff';
             }
 
-            public function process(\DOMDocument $document, string $content, string $filePath): array
+            public function process(\DOMDocument $document, File $file): array
             {
                 return [];
             }
@@ -216,43 +251,44 @@ final class SniffRunnerTest extends TestCase
 
         $config = $this->createConfig(sniffs: [new SniffEntry($sniffClass::class, ['someProp' => 'someValue'])]);
 
-        $runner = new SniffRunner();
-        $runner->run($this->planPaths($config));
+        $runner = new RunCoordinator();
+        $runner->run($this->planPaths($config, mode: RunMode::Fix));
 
         self::assertSame('someValue', $sniffClass::$captured);
+        self::assertSame(RunMode::Fix, $sniffClass::$capturedMode);
     }
 
-    #[Test]
+    #[Test] // TODO: should be integration
     public function itThrowsWhenSniffClassDoesNotExist(): void
     {
         $config = $this->createConfig(sniffs: [new SniffEntry('NonExistent\\FakeSniff')]);
 
-        $runner = new SniffRunner();
+        $runner = new RunCoordinator();
 
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('does not exist');
+        $this->expectExceptionMessageIsOrContains('does not exist');
 
         $runner->run($this->planPaths($config));
     }
 
-    #[Test]
+    #[Test] // TODO: should be integration
     public function itThrowsWhenClassDoesNotImplementSniffInterface(): void
     {
         $config = $this->createConfig(sniffs: [new SniffEntry(\stdClass::class)]);
 
-        $runner = new SniffRunner();
+        $runner = new RunCoordinator();
 
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('does not implement');
+        $this->expectExceptionMessageIsOrContains('does not implement');
 
         $runner->run($this->planPaths($config));
     }
 
-    #[Test]
+    #[Test] // TODO: should be integration
     public function itFiltersFilesToOnlyThoseInTheDiff(): void
     {
         $config = $this->createConfig();
-        $runner = new SniffRunner();
+        $runner = new RunCoordinator();
 
         $diff = new Diff([new FileChange(self::FIXTURE_DIR . '/file_a.xml', [1])]);
         $report = $runner->run($this->planDiff($config, $diff));
@@ -260,11 +296,11 @@ final class SniffRunnerTest extends TestCase
         self::assertSame(1, $report->getFilesScanned());
     }
 
-    #[Test]
+    #[Test] // TODO: should be integration
     public function itScansNoFilesWhenDiffContainsNoMatchingPaths(): void
     {
         $config = $this->createConfig();
-        $runner = new SniffRunner();
+        $runner = new RunCoordinator();
 
         $diff = new Diff([new FileChange('completely/different/file.xml', [1, 2, 3])]);
         $report = $runner->run($this->planDiff($config, $diff));
@@ -272,11 +308,11 @@ final class SniffRunnerTest extends TestCase
         self::assertSame(0, $report->getFilesScanned());
     }
 
-    #[Test]
+    #[Test] // TODO: should be integration
     public function itMatchesWhenDiffPathEqualsDiscoveredPath(): void
     {
         $config = $this->createConfig();
-        $runner = new SniffRunner();
+        $runner = new RunCoordinator();
 
         $discoveredPath = self::FIXTURE_DIR . '/file_a.xml';
 
@@ -286,33 +322,39 @@ final class SniffRunnerTest extends TestCase
         self::assertSame(1, $report->getFilesScanned());
     }
 
-    #[Test]
+    #[Test] // TODO: should be integration
     public function itScansAllFilesWhenNoDiffIsGiven(): void
     {
         $config = $this->createConfig();
-        $runner = new SniffRunner();
+        $runner = new RunCoordinator();
 
         $report = $runner->run($this->planPaths($config));
 
         self::assertSame(2, $report->getFilesScanned());
     }
 
-    #[Test]
+    #[Test] // TODO: should be integration
     public function itReportsNoViolationsForFilesInDiffWithoutAddedLines(): void
     {
-        $sniff = new class implements SniffInterface {
-            public function getCode(): string
+        $sniff = new class (RunMode::Sniff) implements SniffInterface {
+            public function __construct(public RunMode $mode)
+            {
+            }
+
+            public static function getCode(): string
             {
                 return 'Test.ViolatingSniff';
             }
 
-            public function process(\DOMDocument $document, string $content, string $filePath): array
+            public function process(\DOMDocument $document, File $file): array
             {
                 return [
                     new Violation(
                         sniffCode: 'Test.ViolatingSniff',
-                        filePath: $filePath,
+                        filePath: $file->path,
                         line: 1,
+                        beginOffset: 0,
+                        untilOffset: 0,
                         message: 'Test violation',
                         severity: Severity::WARNING,
                     ),
@@ -325,7 +367,7 @@ final class SniffRunnerTest extends TestCase
         };
 
         $config = $this->createConfig(sniffs: [new SniffEntry($sniff::class)]);
-        $runner = new SniffRunner();
+        $runner = new RunCoordinator();
 
         $diff = new Diff([new FileChange(self::FIXTURE_DIR . '/file_a.xml', [])]);
         $report = $runner->run($this->planDiff($config, $diff));
@@ -335,13 +377,13 @@ final class SniffRunnerTest extends TestCase
     }
 
     /** @param list<string>|null $paths */
-    private function planPaths(ConfigData $config, ?array $paths = null): RunPlan
+    private function planPaths(ConfigData $config, ?array $paths = null, RunMode $mode = RunMode::Sniff): RunPlan
     {
-        return new RunPlanner($config)->planPaths($paths ?? $config->getIncludePaths());
+        return new RunPlanner($config, $mode)->planPaths($paths ?? $config->getIncludePaths());
     }
 
-    private function planDiff(ConfigData $config, Diff $diff): RunPlan
+    private function planDiff(ConfigData $config, Diff $diff, RunMode $mode = RunMode::Sniff): RunPlan
     {
-        return new RunPlanner($config)->planDiff($diff);
+        return new RunPlanner($config, $mode)->planDiff($diff);
     }
 }

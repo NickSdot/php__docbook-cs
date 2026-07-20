@@ -8,26 +8,29 @@ use DocbookCS\Process\NativeProcessRunner;
 use DocbookCS\Process\ProcessResult;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[
     CoversClass(NativeProcessRunner::class),
-    //
-    UsesClass(ProcessResult::class),
+    CoversClass(ProcessResult::class),
 ]
 final class NativeProcessRunnerTest extends TestCase
 {
     #[Test]
-    public function itReturnsTheExitCodeAndOutputStreams(): void
+    public function itCapturesTheProcessResult(): void
     {
-        $result = new NativeProcessRunner()->run(
-            [PHP_BINARY, '-r', 'fwrite(STDOUT, "out"); fwrite(STDERR, "err"); exit(7);'],
+        $processRunner = new NativeProcessRunner();
+        $result = $processRunner->run(
+            [
+                PHP_BINARY,
+                '-r',
+                'fwrite(STDOUT, "output"); fwrite(STDERR, "error"); exit(7);',
+            ],
             getcwd() ?: '.',
         );
 
         self::assertSame(7, $result->exitCode);
-        self::assertSame('out', $result->stdout);
-        self::assertSame('err', $result->stderr);
+        self::assertSame('output', $result->stdout);
+        self::assertSame('error', $result->stderr);
     }
 }

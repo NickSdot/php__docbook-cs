@@ -103,7 +103,8 @@ final class GitDiffProviderTest extends TestCase
 
     private function git(string ...$arguments): string
     {
-        $result = $this->processRunner->run(array_values(['git', ...$arguments]), $this->repository);
+        $command = array_values(['git', ...$arguments]);
+        $result = $this->processRunner->run($command, $this->repository);
 
         self::assertSame(0, $result->exitCode, $result->stderr);
 

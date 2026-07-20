@@ -14,7 +14,7 @@ use DocbookCS\Application;
 
     foreach ($candidates as $file) {
         if (!is_file($file)) {
-          continue;
+            continue;
         }
 
         require $file;
@@ -25,4 +25,11 @@ use DocbookCS\Application;
     exit(2);
 })();
 
-exit(Application::fromGlobals($argv ?? [])->run());
+try {
+    $application = Application::fromGlobals($argv ?? []);
+} catch (\RuntimeException $e) {
+    fwrite(STDERR, $e->getMessage() . PHP_EOL);
+    exit(2);
+}
+
+exit($application->run());

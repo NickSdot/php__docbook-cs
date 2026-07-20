@@ -36,7 +36,7 @@ final class ApplicationInputTest extends TestCase
     }
 
     #[Test]
-    public function itRejectsTheRemovedDiffOption(): void
+    public function itRejectsAValuelessDiffOption(): void
     {
         $app = new Application(
             ['docbook-cs', '--config=' . self::VALID_CONFIG, '--diff'],
@@ -77,7 +77,7 @@ final class ApplicationInputTest extends TestCase
     }
 
     #[Test]
-    public function itIncludesTheWideOptionInHelp(): void
+    public function itIncludesFixAndWideOptionsInHelp(): void
     {
         $app = new Application(['docbook-cs', '--help'], $this->stdout, $this->stderr);
 
@@ -85,8 +85,8 @@ final class ApplicationInputTest extends TestCase
 
         $output = $this->readStream($this->stdout);
 
+        self::assertStringContainsString('--fix', $output);
         self::assertStringContainsString('--wide', $output);
-        self::assertStringNotContainsString('--diff', $output);
     }
 
     /** @param resource $stream */
