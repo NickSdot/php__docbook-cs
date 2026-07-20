@@ -14,7 +14,8 @@ final class FileReport
 
     public function __construct(
         public readonly string $filePath,
-    ) {}
+    ) {
+    }
 
     public function addViolation(Violation $violation): void
     {
