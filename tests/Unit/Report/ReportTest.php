@@ -8,15 +8,21 @@ use DocbookCS\RelativePath;
 use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
 use DocbookCS\Violation\Severity;
+use DocbookCS\Violation\SourceRange;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Report::class)]
-#[CoversClass(Violation::class)]
-#[CoversClass(FileReport::class)]
-#[CoversClass(RelativePath::class)]
+#[
+    CoversClass(FileReport::class),
+    CoversClass(RelativePath::class),
+    CoversClass(Report::class),
+    CoversClass(Violation::class),
+    //
+    UsesClass(SourceRange::class),
+]
 final class ReportTest extends TestCase
 {
     private function createViolation(

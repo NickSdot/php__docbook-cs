@@ -9,7 +9,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(EntityResolver::class)]
+#[
+    CoversClass(EntityResolver::class),
+]
 final class EntityResolverPathsTest extends TestCase
 {
     #[Test]

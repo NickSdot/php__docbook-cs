@@ -11,12 +11,17 @@ use DocbookCS\Fix\FixResult;
 use DocbookCS\Source\File;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Fix::class)]
-#[CoversClass(FixApplier::class)]
-#[CoversClass(FixPlan::class)]
-#[CoversClass(FixResult::class)]
+#[
+    CoversClass(Fix::class),
+    CoversClass(FixApplier::class),
+    CoversClass(FixPlan::class),
+    CoversClass(FixResult::class),
+    //
+    UsesClass(File::class),
+]
 final class FixPlanTest extends TestCase
 {
     #[Test]

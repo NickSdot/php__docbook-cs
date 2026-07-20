@@ -4,19 +4,27 @@ declare(strict_types=1);
 
 namespace DocbookCS\Tests\Unit\Report\Reporter;
 
+use DocbookCS\RelativePath;
 use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
 use DocbookCS\Report\Reporter\ConsoleReporter;
 use DocbookCS\Violation\Severity;
+use DocbookCS\Violation\SourceRange;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(ConsoleReporter::class)]
-#[CoversClass(FileReport::class)]
-#[CoversClass(Report::class)]
-#[CoversClass(Violation::class)]
+#[
+    CoversClass(ConsoleReporter::class),
+    CoversClass(FileReport::class),
+    CoversClass(Report::class),
+    CoversClass(Violation::class),
+    //
+    UsesClass(RelativePath::class),
+    UsesClass(SourceRange::class),
+]
 final class ConsoleReporterTest extends TestCase
 {
     private ConsoleReporter $reporter;

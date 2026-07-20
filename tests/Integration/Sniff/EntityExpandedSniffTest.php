@@ -10,15 +10,26 @@ use DocbookCS\Sniff\AbstractSniff;
 use DocbookCS\Sniff\ExceptionNameSniff;
 use DocbookCS\Sniff\SimparaSniff;
 use DocbookCS\Source\File;
+use DocbookCS\Source\Line;
+use DocbookCS\Violation\SourceRange;
+use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(AbstractSniff::class)]
-#[CoversClass(EntityExpansionMarker::class)]
-#[CoversClass(EntityPreprocessor::class)]
-#[CoversClass(ExceptionNameSniff::class)]
-#[CoversClass(SimparaSniff::class)]
+#[
+    CoversClass(AbstractSniff::class),
+    CoversClass(EntityExpansionMarker::class),
+    CoversClass(EntityPreprocessor::class),
+    CoversClass(ExceptionNameSniff::class),
+    CoversClass(SimparaSniff::class),
+    //
+    UsesClass(File::class),
+    UsesClass(Line::class),
+    UsesClass(SourceRange::class),
+    UsesClass(Violation::class),
+]
 final class EntityExpandedSniffTest extends TestCase
 {
     #[Test]

@@ -5,26 +5,66 @@ declare(strict_types=1);
 namespace DocbookCS\Tests\Integration\Runner;
 
 use DocbookCS\Diff\FileChange;
+use DocbookCS\Fix\Fix;
+use DocbookCS\Fix\FixApplier;
+use DocbookCS\Fix\FixPlan;
+use DocbookCS\Fix\FixResult;
 use DocbookCS\Fix\Fixer\AttributeOrderFixer;
+use DocbookCS\Fix\Fixer\ExceptionNameFixer;
+use DocbookCS\Fix\Fixer\SimparaFixer;
 use DocbookCS\Fix\FixerException;
 use DocbookCS\Report\FileReport;
+use DocbookCS\Report\Report;
+use DocbookCS\Runner\EntityExpansionMarker;
+use DocbookCS\Runner\EntityPreprocessor;
 use DocbookCS\Runner\RunMode;
+use DocbookCS\Runner\SourceScope;
 use DocbookCS\Runner\ViolationScopeFilter;
 use DocbookCS\Runner\XmlFileProcessor;
+use DocbookCS\Runner\XmlProcessingResult;
 use DocbookCS\Sniff\AbstractSniff;
 use DocbookCS\Sniff\ExceptionNameSniff;
 use DocbookCS\Sniff\Fixable;
 use DocbookCS\Sniff\SimparaSniff;
 use DocbookCS\Source\File;
+use DocbookCS\Source\Line;
 use DocbookCS\Tests\Support\Fix\LineBreakFixer;
 use DocbookCS\Tests\Support\Fix\ToggleElementFixer;
+use DocbookCS\Violation\SourceRange;
+use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(XmlFileProcessor::class)]
-#[UsesClass(ViolationScopeFilter::class)]
+#[
+    CoversClass(XmlFileProcessor::class),
+    //
+    UsesClass(AbstractSniff::class),
+    UsesClass(AttributeOrderFixer::class),
+    UsesClass(EntityExpansionMarker::class),
+    UsesClass(EntityPreprocessor::class),
+    UsesClass(ExceptionNameFixer::class),
+    UsesClass(ExceptionNameSniff::class),
+    UsesClass(File::class),
+    UsesClass(FileChange::class),
+    UsesClass(FileReport::class),
+    UsesClass(Fix::class),
+    UsesClass(FixApplier::class),
+    UsesClass(FixerException::class),
+    UsesClass(FixPlan::class),
+    UsesClass(FixResult::class),
+    UsesClass(Line::class),
+    UsesClass(Report::class),
+    UsesClass(RunMode::class),
+    UsesClass(SimparaFixer::class),
+    UsesClass(SimparaSniff::class),
+    UsesClass(SourceRange::class),
+    UsesClass(SourceScope::class),
+    UsesClass(Violation::class),
+    UsesClass(ViolationScopeFilter::class),
+    UsesClass(XmlProcessingResult::class),
+]
 final class FixConvergenceTest extends TestCase
 {
     #[Test]

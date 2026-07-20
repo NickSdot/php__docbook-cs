@@ -12,10 +12,12 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(FileReport::class)]
-#[CoversClass(FixerException::class)]
-#[CoversClass(File::class)]
-#[CoversClass(XmlProcessingResult::class)]
+#[
+    CoversClass(File::class),
+    CoversClass(FileReport::class),
+    CoversClass(FixerException::class),
+    CoversClass(XmlProcessingResult::class),
+]
 final class XmlProcessingResultTest extends TestCase
 {
     #[Test]

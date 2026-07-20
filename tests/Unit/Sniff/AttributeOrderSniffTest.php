@@ -6,13 +6,22 @@ namespace DocbookCS\Tests\Unit\Sniff;
 
 use DocbookCS\Sniff\AttributeOrderSniff;
 use DocbookCS\Source\File;
+use DocbookCS\Source\Line;
+use DocbookCS\Violation\SourceRange;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(AttributeOrderSniff::class)]
-#[CoversClass(Violation::class)]
+#[
+    CoversClass(AttributeOrderSniff::class),
+    CoversClass(Violation::class),
+    //
+    UsesClass(File::class),
+    UsesClass(Line::class),
+    UsesClass(SourceRange::class),
+]
 final class AttributeOrderSniffTest extends TestCase
 {
     private function createDocument(string $xml): \DOMDocument

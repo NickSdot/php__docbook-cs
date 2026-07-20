@@ -8,16 +8,22 @@ use DocbookCS\Sniff\MixedIndentationSniff;
 use DocbookCS\Sniff\TrailingWhitespaceSniff;
 use DocbookCS\Source\File;
 use DocbookCS\Source\Line;
+use DocbookCS\Violation\SourceRange;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(MixedIndentationSniff::class)]
-#[CoversClass(File::class)]
-#[CoversClass(Line::class)]
-#[CoversClass(TrailingWhitespaceSniff::class)]
-#[CoversClass(Violation::class)]
+#[
+    CoversClass(File::class),
+    CoversClass(Line::class),
+    CoversClass(MixedIndentationSniff::class),
+    CoversClass(TrailingWhitespaceSniff::class),
+    CoversClass(Violation::class),
+    //
+    UsesClass(SourceRange::class),
+]
 final class WhitespaceConcernSniffsTest extends TestCase
 {
     #[Test]

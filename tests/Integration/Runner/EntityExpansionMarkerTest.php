@@ -10,8 +10,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(EntityExpansionMarker::class)]
-#[CoversClass(EntityPreprocessor::class)]
+#[
+    CoversClass(EntityExpansionMarker::class),
+    CoversClass(EntityPreprocessor::class),
+]
 final class EntityExpansionMarkerTest extends TestCase
 {
     #[Test]

@@ -4,17 +4,28 @@ declare(strict_types=1);
 
 namespace DocbookCS\Tests\Unit\Sniff;
 
+use DocbookCS\Runner\EntityExpansionMarker;
 use DocbookCS\Sniff\ExceptionNameSniff;
 use DocbookCS\Sniff\SimparaSniff;
 use DocbookCS\Source\File;
+use DocbookCS\Source\Line;
 use DocbookCS\Violation\SourceRange;
+use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(ExceptionNameSniff::class)]
-#[CoversClass(SimparaSniff::class)]
-#[CoversClass(SourceRange::class)]
+#[
+    CoversClass(ExceptionNameSniff::class),
+    CoversClass(SimparaSniff::class),
+    CoversClass(SourceRange::class),
+    //
+    UsesClass(EntityExpansionMarker::class),
+    UsesClass(File::class),
+    UsesClass(Line::class),
+    UsesClass(Violation::class),
+]
 final class AffectedRangesTest extends TestCase
 {
     #[Test]

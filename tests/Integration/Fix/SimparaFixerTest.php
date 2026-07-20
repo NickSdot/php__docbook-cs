@@ -6,23 +6,36 @@ namespace DocbookCS\Tests\Integration\Fix;
 
 use DocbookCS\Fix\Fix;
 use DocbookCS\Fix\FixApplier;
+use DocbookCS\Fix\FixPlan;
 use DocbookCS\Fix\Fixer\SimparaFixer;
 use DocbookCS\Fix\FixResult;
+use DocbookCS\Runner\EntityExpansionMarker;
 use DocbookCS\Runner\RunMode;
 use DocbookCS\Sniff\SimparaSniff;
 use DocbookCS\Source\File;
+use DocbookCS\Source\Line;
+use DocbookCS\Violation\SourceRange;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Fix::class)]
-#[CoversClass(FixApplier::class)]
-#[CoversClass(FixResult::class)]
-#[CoversClass(RunMode::class)]
-#[CoversClass(SimparaFixer::class)]
-#[CoversClass(SimparaSniff::class)]
-#[CoversClass(Violation::class)]
+#[
+    CoversClass(Fix::class),
+    CoversClass(FixApplier::class),
+    CoversClass(FixResult::class),
+    CoversClass(RunMode::class),
+    CoversClass(SimparaFixer::class),
+    CoversClass(SimparaSniff::class),
+    CoversClass(Violation::class),
+    //
+    UsesClass(EntityExpansionMarker::class),
+    UsesClass(File::class),
+    UsesClass(FixPlan::class),
+    UsesClass(Line::class),
+    UsesClass(SourceRange::class),
+]
 final class SimparaFixerTest extends TestCase
 {
     #[Test]

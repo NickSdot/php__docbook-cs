@@ -7,14 +7,25 @@ namespace DocbookCS\Tests\Integration\Runner;
 use DocbookCS\Config\ConfigData;
 use DocbookCS\Diff\Diff;
 use DocbookCS\Diff\FileChange;
+use DocbookCS\Path\DiffPathLoader;
+use DocbookCS\Path\PathLoader;
 use DocbookCS\Path\PathMatcher;
 use DocbookCS\Runner\RunScopeResolver;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(PathMatcher::class)]
-#[CoversClass(RunScopeResolver::class)]
+#[
+    CoversClass(PathMatcher::class),
+    CoversClass(RunScopeResolver::class),
+    //
+    UsesClass(ConfigData::class),
+    UsesClass(Diff::class),
+    UsesClass(DiffPathLoader::class),
+    UsesClass(FileChange::class),
+    UsesClass(PathLoader::class),
+]
 final class RunScopeResolverTest extends TestCase
 {
     private string $directory;

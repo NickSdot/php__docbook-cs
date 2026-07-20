@@ -10,8 +10,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(NativeProcessRunner::class)]
-#[CoversClass(ProcessResult::class)]
+#[
+    CoversClass(NativeProcessRunner::class),
+    CoversClass(ProcessResult::class),
+]
 final class NativeProcessRunnerTest extends TestCase
 {
     #[Test]

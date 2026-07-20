@@ -9,12 +9,16 @@ use DocbookCS\Config\ConfigData;
 use DocbookCS\Diff\Diff;
 use DocbookCS\Diff\DiffParser;
 use DocbookCS\Diff\FileChange;
+use DocbookCS\Diff\GitDiffProvider;
 use DocbookCS\Config\ConfigParser;
 use DocbookCS\Config\ConfigParserException;
 use DocbookCS\Config\SniffEntry;
+use DocbookCS\Path\DiffPathLoader;
 use DocbookCS\Path\EntityResolver;
 use DocbookCS\Path\PathLoader;
 use DocbookCS\Path\PathMatcher;
+use DocbookCS\Process\NativeProcessRunner;
+use DocbookCS\Process\ProcessResult;
 use DocbookCS\Progress\NullProgress;
 use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
@@ -26,39 +30,54 @@ use DocbookCS\Runner\RunMode;
 use DocbookCS\Runner\RunCoordinator;
 use DocbookCS\Runner\RunPlan;
 use DocbookCS\Runner\RunPlanner;
+use DocbookCS\Runner\RunScopeResolver;
+use DocbookCS\Runner\SourceScope;
 use DocbookCS\Runner\ViolationScopeFilter;
 use DocbookCS\Runner\XmlFileProcessor;
+use DocbookCS\Runner\XmlProcessingResult;
 use DocbookCS\Sniff\ExceptionNameSniff;
+use DocbookCS\Source\File;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Application::class)]
-#[CoversClass(DiffParser::class)]
-#[CoversClass(ConfigParser::class)]
-#[CoversClass(ConfigParserException::class)]
-#[CoversClass(ConfigData::class)]
-#[CoversClass(SniffEntry::class)]
-#[CoversClass(PathLoader::class)]
-#[CoversClass(PathMatcher::class)]
-#[CoversClass(NullProgress::class)]
-#[CoversClass(Report::class)]
-#[CoversClass(ConsoleReporter::class)]
-#[CoversClass(EntityPreprocessor::class)]
-#[CoversClass(RunMode::class)]
-#[CoversClass(RunCoordinator::class)]
-#[CoversClass(RunPlan::class)]
-#[CoversClass(RunPlanner::class)]
-#[CoversClass(XmlFileProcessor::class)]
-#[CoversClass(CheckstyleReporter::class)]
-#[CoversClass(JsonReporter::class)]
-#[CoversClass(FileReport::class)]
-#[CoversClass(ExceptionNameSniff::class)]
-#[CoversClass(EntityResolver::class)]
-#[UsesClass(ViolationScopeFilter::class)]
-#[UsesClass(Diff::class)]
-#[UsesClass(FileChange::class)]
+#[
+    CoversClass(Application::class),
+    CoversClass(CheckstyleReporter::class),
+    CoversClass(ConfigData::class),
+    CoversClass(ConfigParser::class),
+    CoversClass(ConfigParserException::class),
+    CoversClass(ConsoleReporter::class),
+    CoversClass(DiffParser::class),
+    CoversClass(EntityPreprocessor::class),
+    CoversClass(EntityResolver::class),
+    CoversClass(ExceptionNameSniff::class),
+    CoversClass(FileReport::class),
+    CoversClass(JsonReporter::class),
+    CoversClass(NullProgress::class),
+    CoversClass(PathLoader::class),
+    CoversClass(PathMatcher::class),
+    CoversClass(Report::class),
+    CoversClass(RunCoordinator::class),
+    CoversClass(RunMode::class),
+    CoversClass(RunPlan::class),
+    CoversClass(RunPlanner::class),
+    CoversClass(SniffEntry::class),
+    CoversClass(XmlFileProcessor::class),
+    //
+    UsesClass(Diff::class),
+    UsesClass(DiffPathLoader::class),
+    UsesClass(File::class),
+    UsesClass(FileChange::class),
+    UsesClass(GitDiffProvider::class),
+    UsesClass(NativeProcessRunner::class),
+    UsesClass(ProcessResult::class),
+    UsesClass(RunScopeResolver::class),
+    UsesClass(SourceScope::class),
+    UsesClass(ViolationScopeFilter::class),
+    UsesClass(XmlProcessingResult::class),
+]
 final class ApplicationTest extends TestCase
 {
     private const string FIXTURE_DIR = __DIR__ . '/../fixtures/application';

@@ -6,23 +6,34 @@ namespace DocbookCS\Tests\Integration\Fix;
 
 use DocbookCS\Fix\Fix;
 use DocbookCS\Fix\FixApplier;
+use DocbookCS\Fix\FixPlan;
 use DocbookCS\Fix\Fixer\AttributeOrderFixer;
 use DocbookCS\Fix\FixResult;
 use DocbookCS\Runner\RunMode;
 use DocbookCS\Sniff\AttributeOrderSniff;
 use DocbookCS\Source\File;
+use DocbookCS\Source\Line;
+use DocbookCS\Violation\SourceRange;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(AttributeOrderFixer::class)]
-#[CoversClass(AttributeOrderSniff::class)]
-#[CoversClass(Fix::class)]
-#[CoversClass(FixApplier::class)]
-#[CoversClass(FixResult::class)]
-#[CoversClass(RunMode::class)]
-#[CoversClass(Violation::class)]
+#[
+    CoversClass(AttributeOrderFixer::class),
+    CoversClass(AttributeOrderSniff::class),
+    CoversClass(Fix::class),
+    CoversClass(FixApplier::class),
+    CoversClass(FixResult::class),
+    CoversClass(RunMode::class),
+    CoversClass(Violation::class),
+    //
+    UsesClass(File::class),
+    UsesClass(FixPlan::class),
+    UsesClass(Line::class),
+    UsesClass(SourceRange::class),
+]
 final class AttributeOrderFixerTest extends TestCase
 {
     #[Test]
@@ -34,7 +45,7 @@ final class AttributeOrderFixerTest extends TestCase
 
         $violations = new AttributeOrderSniff(RunMode::Fix)->process($document, $source);
 
-        $beginOffset = (int) strpos($content, '<root');
+        $beginOffset = (int)strpos($content, '<root');
         $sourceContent = '<root xmlns="urn:test" xml:id="root"/>';
 
         self::assertCount(1, $violations);
@@ -45,7 +56,7 @@ final class AttributeOrderFixerTest extends TestCase
 
         $fix = new AttributeOrderFixer()->process($violations[0]);
 
-        $result = new FixApplier()->apply($source, [$fix]);
+        $result = new FixApplier()->apply($source, [ $fix ]);
 
         self::assertSame('<root xml:id="root" xmlns="urn:test"/>', $result->file->content);
         self::assertSame(1, $result->applied);

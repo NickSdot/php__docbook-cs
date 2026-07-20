@@ -8,6 +8,8 @@ use DocbookCS\Config\ConfigData;
 use DocbookCS\Config\SniffEntry;
 use DocbookCS\Diff\Diff;
 use DocbookCS\Diff\FileChange;
+use DocbookCS\Diff\GitDiffProvider;
+use DocbookCS\Path\DiffPathLoader;
 use DocbookCS\Path\EntityResolver;
 use DocbookCS\Path\PathLoader;
 use DocbookCS\Path\PathMatcher;
@@ -20,35 +22,51 @@ use DocbookCS\Runner\RunCoordinator;
 use DocbookCS\Runner\RunMode;
 use DocbookCS\Runner\RunPlan;
 use DocbookCS\Runner\RunPlanner;
+use DocbookCS\Runner\RunScopeResolver;
+use DocbookCS\Runner\SourceScope;
 use DocbookCS\Runner\ViolationScopeFilter;
 use DocbookCS\Runner\XmlFileProcessor;
+use DocbookCS\Runner\XmlProcessingResult;
 use DocbookCS\Sniff\SniffInterface;
 use DocbookCS\Source\File;
+use DocbookCS\Source\Line;
 use DocbookCS\Violation\Severity;
+use DocbookCS\Violation\SourceRange;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(RunCoordinator::class)]
-#[CoversClass(ConfigData::class)]
-#[CoversClass(PathLoader::class)]
-#[CoversClass(PathMatcher::class)]
-#[CoversClass(NullProgress::class)]
-#[CoversClass(EntityPreprocessor::class)]
-#[CoversClass(EntityResolver::class)]
-#[CoversClass(RunMode::class)]
-#[CoversClass(RunPlan::class)]
-#[CoversClass(RunPlanner::class)]
-#[CoversClass(XmlFileProcessor::class)]
-#[CoversClass(Report::class)]
-#[CoversClass(SniffEntry::class)]
-#[CoversClass(FileReport::class)]
-#[CoversClass(Violation::class)]
-#[UsesClass(ViolationScopeFilter::class)]
-#[UsesClass(Diff::class)]
-#[UsesClass(FileChange::class)]
+#[
+    CoversClass(ConfigData::class),
+    CoversClass(EntityPreprocessor::class),
+    CoversClass(EntityResolver::class),
+    CoversClass(FileReport::class),
+    CoversClass(NullProgress::class),
+    CoversClass(PathLoader::class),
+    CoversClass(PathMatcher::class),
+    CoversClass(Report::class),
+    CoversClass(RunCoordinator::class),
+    CoversClass(RunMode::class),
+    CoversClass(RunPlan::class),
+    CoversClass(RunPlanner::class),
+    CoversClass(SniffEntry::class),
+    CoversClass(Violation::class),
+    CoversClass(XmlFileProcessor::class),
+    //
+    UsesClass(Diff::class),
+    UsesClass(DiffPathLoader::class),
+    UsesClass(File::class),
+    UsesClass(FileChange::class),
+    UsesClass(GitDiffProvider::class),
+    UsesClass(Line::class),
+    UsesClass(RunScopeResolver::class),
+    UsesClass(SourceRange::class),
+    UsesClass(SourceScope::class),
+    UsesClass(ViolationScopeFilter::class),
+    UsesClass(XmlProcessingResult::class),
+]
 final class SniffRunnerTest extends TestCase
 {
     private const string FIXTURE_DIR = __DIR__ . '/../../fixtures/sniff_runner/default';

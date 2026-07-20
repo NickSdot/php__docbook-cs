@@ -5,18 +5,34 @@ declare(strict_types=1);
 namespace DocbookCS\Tests\Unit\Runner;
 
 use DocbookCS\Config\ConfigData;
+use DocbookCS\Diff\Diff;
+use DocbookCS\Diff\FileChange;
 use DocbookCS\Diff\DiffParser;
 use DocbookCS\Diff\DiffProviderInterface;
+use DocbookCS\Path\DiffPathLoader;
+use DocbookCS\Path\EntityResolver;
+use DocbookCS\Path\PathMatcher;
 use DocbookCS\Runner\RunPlan;
 use DocbookCS\Runner\RunPlanner;
+use DocbookCS\Runner\RunScopeResolver;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(RunPlanner::class)]
-#[CoversClass(RunPlan::class)]
-#[UsesClass(DiffParser::class)]
+#[
+    CoversClass(RunPlan::class),
+    CoversClass(RunPlanner::class),
+    //
+    UsesClass(ConfigData::class),
+    UsesClass(Diff::class),
+    UsesClass(DiffParser::class),
+    UsesClass(DiffPathLoader::class),
+    UsesClass(EntityResolver::class),
+    UsesClass(FileChange::class),
+    UsesClass(PathMatcher::class),
+    UsesClass(RunScopeResolver::class),
+]
 final class RunPlannerTest extends TestCase
 {
     #[Test]

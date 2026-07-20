@@ -8,27 +8,78 @@ use DocbookCS\Config\ConfigData;
 use DocbookCS\Config\SniffEntry;
 use DocbookCS\Diff\Diff;
 use DocbookCS\Diff\FileChange;
+use DocbookCS\Diff\GitDiffProvider;
+use DocbookCS\Fix\Fix;
+use DocbookCS\Fix\FixApplier;
+use DocbookCS\Fix\FixPlan;
+use DocbookCS\Fix\FixResult;
+use DocbookCS\Fix\Fixer\SimparaFixer;
 use DocbookCS\Path\DiffPathLoader;
 use DocbookCS\Path\EntityResolver;
 use DocbookCS\Path\PathLoader;
 use DocbookCS\Path\PathMatcher;
+use DocbookCS\Progress\NullProgress;
+use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
+use DocbookCS\Runner\EntityExpansionMarker;
+use DocbookCS\Runner\EntityPreprocessor;
 use DocbookCS\Runner\RunCoordinator;
 use DocbookCS\Runner\RunMode;
+use DocbookCS\Runner\RunPlan;
 use DocbookCS\Runner\RunPlanner;
 use DocbookCS\Runner\RunScopeResolver;
+use DocbookCS\Runner\SourceScope;
+use DocbookCS\Runner\ViolationScopeFilter;
+use DocbookCS\Runner\XmlFileProcessor;
+use DocbookCS\Runner\XmlProcessingResult;
+use DocbookCS\Sniff\AbstractSniff;
 use DocbookCS\Sniff\SimparaSniff;
+use DocbookCS\Source\File;
+use DocbookCS\Source\Line;
+use DocbookCS\Violation\SourceRange;
+use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(EntityResolver::class)]
-#[CoversClass(DiffPathLoader::class)]
-#[CoversClass(PathLoader::class)]
-#[CoversClass(PathMatcher::class)]
-#[CoversClass(RunCoordinator::class)]
-#[CoversClass(RunPlanner::class)]
-#[CoversClass(RunScopeResolver::class)]
+#[
+    CoversClass(DiffPathLoader::class),
+    CoversClass(EntityResolver::class),
+    CoversClass(PathLoader::class),
+    CoversClass(PathMatcher::class),
+    CoversClass(RunCoordinator::class),
+    CoversClass(RunPlanner::class),
+    CoversClass(RunScopeResolver::class),
+    //
+    UsesClass(AbstractSniff::class),
+    UsesClass(ConfigData::class),
+    UsesClass(Diff::class),
+    UsesClass(EntityExpansionMarker::class),
+    UsesClass(EntityPreprocessor::class),
+    UsesClass(File::class),
+    UsesClass(FileChange::class),
+    UsesClass(FileReport::class),
+    UsesClass(Fix::class),
+    UsesClass(FixApplier::class),
+    UsesClass(FixPlan::class),
+    UsesClass(FixResult::class),
+    UsesClass(GitDiffProvider::class),
+    UsesClass(Line::class),
+    UsesClass(NullProgress::class),
+    UsesClass(Report::class),
+    UsesClass(RunMode::class),
+    UsesClass(RunPlan::class),
+    UsesClass(SimparaFixer::class),
+    UsesClass(SimparaSniff::class),
+    UsesClass(SniffEntry::class),
+    UsesClass(SourceRange::class),
+    UsesClass(SourceScope::class),
+    UsesClass(Violation::class),
+    UsesClass(ViolationScopeFilter::class),
+    UsesClass(XmlFileProcessor::class),
+    UsesClass(XmlProcessingResult::class),
+]
 final class RunScopeTest extends TestCase
 {
     private string $directory;

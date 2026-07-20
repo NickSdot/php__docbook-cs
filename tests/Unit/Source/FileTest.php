@@ -10,8 +10,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Line::class)]
-#[CoversClass(File::class)]
+#[
+    CoversClass(File::class),
+    CoversClass(Line::class),
+]
 final class FileTest extends TestCase
 {
     #[Test]

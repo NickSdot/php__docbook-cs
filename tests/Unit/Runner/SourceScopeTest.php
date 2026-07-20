@@ -9,15 +9,23 @@ use DocbookCS\Fix\Fix;
 use DocbookCS\Runner\SourceScope;
 use DocbookCS\Source\File;
 use DocbookCS\Source\Line;
+use DocbookCS\Violation\SourceRange;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Fix::class)]
-#[CoversClass(File::class)]
-#[CoversClass(Line::class)]
-#[CoversClass(SourceScope::class)]
+#[
+    CoversClass(File::class),
+    CoversClass(Fix::class),
+    CoversClass(Line::class),
+    CoversClass(SourceScope::class),
+    //
+    UsesClass(FileChange::class),
+    UsesClass(SourceRange::class),
+    UsesClass(Violation::class),
+]
 final class SourceScopeTest extends TestCase
 {
     #[Test]

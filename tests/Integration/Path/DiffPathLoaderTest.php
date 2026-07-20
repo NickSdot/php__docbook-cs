@@ -10,11 +10,16 @@ use DocbookCS\Path\DiffPathLoader;
 use DocbookCS\Path\PathMatcher;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Diff::class)]
-#[CoversClass(DiffPathLoader::class)]
-#[CoversClass(PathMatcher::class)]
+#[
+    CoversClass(Diff::class),
+    CoversClass(DiffPathLoader::class),
+    CoversClass(PathMatcher::class),
+    //
+    UsesClass(FileChange::class),
+]
 final class DiffPathLoaderTest extends TestCase
 {
     private string $directory;

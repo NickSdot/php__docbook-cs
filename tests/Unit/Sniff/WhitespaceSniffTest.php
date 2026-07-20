@@ -6,13 +6,20 @@ namespace DocbookCS\Tests\Unit\Sniff;
 
 use DocbookCS\Sniff\WhitespaceSniff;
 use DocbookCS\Source\File;
+use DocbookCS\Violation\SourceRange;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(WhitespaceSniff::class)]
-#[CoversClass(Violation::class)]
+#[
+    CoversClass(Violation::class),
+    CoversClass(WhitespaceSniff::class),
+    //
+    UsesClass(File::class),
+    UsesClass(SourceRange::class),
+]
 final class WhitespaceSniffTest extends TestCase
 {
     private function createDocument(string $xml): \DOMDocument

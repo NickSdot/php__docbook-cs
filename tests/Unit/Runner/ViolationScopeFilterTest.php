@@ -7,16 +7,21 @@ namespace DocbookCS\Tests\Unit\Runner;
 use DocbookCS\Runner\SourceScope;
 use DocbookCS\Runner\ViolationScopeFilter;
 use DocbookCS\Source\File;
+use DocbookCS\Violation\SourceRange;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(ViolationScopeFilter::class)]
-#[UsesClass(File::class)]
-#[UsesClass(SourceScope::class)]
-#[UsesClass(Violation::class)]
+#[
+    CoversClass(ViolationScopeFilter::class),
+    //
+    UsesClass(File::class),
+    UsesClass(SourceRange::class),
+    UsesClass(SourceScope::class),
+    UsesClass(Violation::class),
+]
 final class ViolationScopeFilterTest extends TestCase
 {
     #[Test]

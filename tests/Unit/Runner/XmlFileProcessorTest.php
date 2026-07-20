@@ -11,23 +11,40 @@ use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
 use DocbookCS\Runner\EntityPreprocessor;
 use DocbookCS\Runner\RunMode;
+use DocbookCS\Runner\SourceScope;
 use DocbookCS\Runner\ViolationScopeFilter;
 use DocbookCS\Runner\XmlFileProcessor;
+use DocbookCS\Runner\XmlProcessingResult;
 use DocbookCS\Sniff\Fixable;
 use DocbookCS\Sniff\SniffInterface;
 use DocbookCS\Source\File;
+use DocbookCS\Source\Line;
 use DocbookCS\Violation\Severity;
+use DocbookCS\Violation\SourceRange;
 use DocbookCS\Violation\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(EntityPreprocessor::class)]
-#[CoversClass(FileReport::class)]
-#[CoversClass(Violation::class)]
-#[CoversClass(ViolationScopeFilter::class)]
-#[CoversClass(XmlFileProcessor::class)]
-#[CoversClass(Report::class)]
+#[
+    CoversClass(EntityPreprocessor::class),
+    CoversClass(FileReport::class),
+    CoversClass(Report::class),
+    CoversClass(Violation::class),
+    CoversClass(ViolationScopeFilter::class),
+    CoversClass(XmlFileProcessor::class),
+    //
+    UsesClass(AttributeOrderFixer::class),
+    UsesClass(File::class),
+    UsesClass(FileChange::class),
+    UsesClass(FixerException::class),
+    UsesClass(Line::class),
+    UsesClass(RunMode::class),
+    UsesClass(SourceRange::class),
+    UsesClass(SourceScope::class),
+    UsesClass(XmlProcessingResult::class),
+]
 final class XmlFileProcessorTest extends TestCase
 {
     #[Test]

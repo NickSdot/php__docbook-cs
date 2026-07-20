@@ -12,9 +12,12 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(GitDiffProvider::class)]
-#[UsesClass(NativeProcessRunner::class)]
-#[UsesClass(ProcessResult::class)]
+#[
+    CoversClass(GitDiffProvider::class),
+    //
+    UsesClass(NativeProcessRunner::class),
+    UsesClass(ProcessResult::class),
+]
 final class GitDiffProviderTest extends TestCase
 {
     private string $repository;
