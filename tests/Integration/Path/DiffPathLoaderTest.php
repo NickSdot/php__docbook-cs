@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace DocbookCS\Tests\Unit\Path;
+namespace DocbookCS\Tests\Integration\Path;
 
 use DocbookCS\Diff\Diff;
 use DocbookCS\Diff\FileChange;

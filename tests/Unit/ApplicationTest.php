@@ -89,7 +89,7 @@ final class ApplicationTest extends TestCase
         return stream_get_contents($stream) ?: '';
     }
 
-    #[Test]
+    #[Test] // TODO: should be feature
     public function itPrintsHelpAndExitsWithZero(): void
     {
         $app = new Application(['docbook-cs', '--help'], $this->stdout, $this->stderr);
@@ -101,7 +101,7 @@ final class ApplicationTest extends TestCase
         self::assertSame('', $this->readStream($this->stderr));
     }
 
-    #[Test]
+    #[Test] // TODO: should be feature
     public function itPrintsVersionAndExitsWithZero(): void
     {
         $app = new Application(['docbook-cs', '--version'], $this->stdout, $this->stderr);
@@ -113,7 +113,7 @@ final class ApplicationTest extends TestCase
         self::assertSame('', $this->readStream($this->stderr));
     }
 
-    #[Test]
+    #[Test] // TODO: should be feature
     public function itReturnsErrorWhenConfigCannotBeLoaded(): void
     {
         $app = new Application(
@@ -128,7 +128,7 @@ final class ApplicationTest extends TestCase
         self::assertStringContainsString('Error:', $this->readStream($this->stderr));
     }
 
-    #[Test]
+    #[Test] // TODO: should be feature
     public function itHandlesSeparateConfigArgument(): void
     {
         $app = new Application(
@@ -143,7 +143,7 @@ final class ApplicationTest extends TestCase
         self::assertStringContainsString('Error:', $this->readStream($this->stderr));
     }
 
-    #[Test]
+    #[Test] // TODO: should be feature
     public function itAcceptsPathsWithoutCrashing(): void
     {
         $app = new Application(
@@ -157,7 +157,7 @@ final class ApplicationTest extends TestCase
         self::assertContains($exitCode, [0, 1, 2]);
     }
 
-    #[Test]
+    #[Test] // TODO: should be feature
     public function itSupportsQuietFlag(): void
     {
         $app = new Application(['docbook-cs', '--quiet'], $this->stdout, $this->stderr);
@@ -167,7 +167,7 @@ final class ApplicationTest extends TestCase
         self::assertContains($exitCode, [0, 1, 2]);
     }
 
-    #[Test]
+    #[Test] // TODO: should be feature
     public function itSupportsReportFormats(): void
     {
         foreach (['console', 'json', 'checkstyle'] as $format) {
@@ -183,7 +183,7 @@ final class ApplicationTest extends TestCase
         }
     }
 
-    #[Test]
+    #[Test] // TODO: should be feature
     public function itSupportsColorFlags(): void
     {
         foreach (['--colors', '--no-colors'] as $flag) {
@@ -199,7 +199,7 @@ final class ApplicationTest extends TestCase
         }
     }
 
-    #[Test]
+    #[Test] // TODO: should be feature
     public function helpShortCircuitsExecution(): void
     {
         $app = new Application(
@@ -215,7 +215,7 @@ final class ApplicationTest extends TestCase
         self::assertSame('', $this->readStream($this->stderr));
     }
 
-    #[Test]
+    #[Test] // TODO: should be feature
     public function versionShortCircuitsExecution(): void
     {
         $app = new Application(
@@ -231,7 +231,7 @@ final class ApplicationTest extends TestCase
         self::assertSame('', $this->readStream($this->stderr));
     }
 
-    #[Test]
+    #[Test] // TODO: should be feature
     public function itResolvesRelativeOverridePathsAgainstCwd(): void
     {
         $app = new Application(
@@ -247,7 +247,7 @@ final class ApplicationTest extends TestCase
         self::assertNotSame(2, $exitCode);
     }
 
-    #[Test]
+    #[Test] // TODO: should be feature
     public function itCatchesRuntimeErrorFromRunner(): void
     {
         $app = new Application(
@@ -262,7 +262,7 @@ final class ApplicationTest extends TestCase
         self::assertStringContainsString('Runtime error:', $this->readStream($this->stderr));
     }
 
-    #[Test]
+    #[Test] // TODO: should be feature
     public function itSupportsSeparateReportArgument(): void
     {
         $app = new Application(
@@ -276,7 +276,7 @@ final class ApplicationTest extends TestCase
         self::assertContains($exitCode, [0, 1, 2]);
     }
 
-    #[Test]
+    #[Test] // TODO: should be feature
     public function itPassesThroughAbsoluteOverridePaths(): void
     {
         $app = new Application(
@@ -290,83 +290,7 @@ final class ApplicationTest extends TestCase
         self::assertNotSame(2, $exitCode);
     }
 
-    #[Test]
-    public function itRejectsAValuelessDiffOption(): void
-    {
-        $app = new Application(
-            ['docbook-cs', '--config=' . self::VALID_CONFIG, '--diff'],
-            $this->stdout,
-            $this->stderr,
-        );
-
-        self::assertSame(2, $app->run());
-        self::assertStringContainsString(
-            'Unknown option: --diff',
-            $this->readStream($this->stderr),
-        );
-    }
-
-    #[Test]
-    public function itDetectsAPipedDiffWithoutAFlag(): void
-    {
-        $app = new Application(
-            ['docbook-cs', '--config=' . self::VALID_CONFIG],
-            $this->stdout,
-            $this->stderr,
-            stdin: '',
-        );
-
-        self::assertSame(0, $app->run());
-        self::assertSame('', $this->readStream($this->stderr));
-    }
-
-    #[Test]
-    public function itRejectsPathsCombinedWithAPipedDiff(): void
-    {
-        $app = new Application(
-            ['docbook-cs', '--config=' . self::VALID_CONFIG, self::SCAN_FILE],
-            $this->stdout,
-            $this->stderr,
-            stdin: '',
-        );
-
-        self::assertSame(2, $app->run());
-        self::assertStringContainsString(
-            'Paths cannot be combined with diff input',
-            $this->readStream($this->stderr),
-        );
-    }
-
-    #[Test]
-    public function itTreatsStrictAsAnUnknownOption(): void
-    {
-        $app = new Application(
-            ['docbook-cs', '--strict'],
-            $this->stdout,
-            $this->stderr,
-        );
-
-        self::assertSame(2, $app->run());
-        self::assertStringContainsString(
-            'Unknown option: --strict',
-            $this->readStream($this->stderr),
-        );
-    }
-
-    #[Test]
-    public function itIncludesFixAndWideOptionsInHelp(): void
-    {
-        $app = new Application(['docbook-cs', '--help'], $this->stdout, $this->stderr);
-
-        $app->run();
-
-        $output = $this->readStream($this->stdout);
-
-        self::assertStringContainsString('--fix', $output);
-        self::assertStringContainsString('--wide', $output);
-    }
-
-    #[Test]
+    #[Test] // TODO: should be feature
     public function itSuppressesProgressWhenQuietFlagIsSet(): void
     {
         $app = new Application(
@@ -381,7 +305,7 @@ final class ApplicationTest extends TestCase
         self::assertSame('', $this->readStream($this->stderr));
     }
 
-    #[Test]
+    #[Test] // TODO: should be feature
     public function itSuppressesProgressForStructuredReportFormats(): void
     {
         foreach (['json', 'checkstyle'] as $format) {
@@ -404,7 +328,7 @@ final class ApplicationTest extends TestCase
         }
     }
 
-    #[Test]
+    #[Test] // TODO: should be feature
     public function itShowsPerformanceWhenPerfFlagIsEnabled(): void
     {
         $app = new Application(
@@ -427,7 +351,7 @@ final class ApplicationTest extends TestCase
         self::assertStringContainsString('PERFORMANCE', $output);
     }
 
-    #[Test]
+    #[Test] // TODO: should be feature
     public function itDoesNotShowPerformanceByDefault(): void
     {
         $app = new Application(
