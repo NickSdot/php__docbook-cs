@@ -6,7 +6,9 @@ namespace DocbookCS\Tests\Unit;
 
 use DocbookCS\Application;
 use DocbookCS\Config\ConfigData;
+use DocbookCS\Diff\Diff;
 use DocbookCS\Diff\DiffParser;
+use DocbookCS\Diff\FileChange;
 use DocbookCS\Config\ConfigParser;
 use DocbookCS\Config\ConfigParserException;
 use DocbookCS\Config\SniffEntry;
@@ -55,6 +57,8 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(ExceptionNameSniff::class)]
 #[CoversClass(EntityResolver::class)]
 #[UsesClass(ViolationScopeFilter::class)]
+#[UsesClass(Diff::class)]
+#[UsesClass(FileChange::class)]
 final class ApplicationTest extends TestCase
 {
     private const string FIXTURE_DIR = __DIR__ . '/../fixtures/application';

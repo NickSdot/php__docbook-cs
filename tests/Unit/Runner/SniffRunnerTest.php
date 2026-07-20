@@ -47,6 +47,8 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(FileReport::class)]
 #[CoversClass(Violation::class)]
 #[UsesClass(ViolationScopeFilter::class)]
+#[UsesClass(Diff::class)]
+#[UsesClass(FileChange::class)]
 final class SniffRunnerTest extends TestCase
 {
     private const string FIXTURE_DIR = __DIR__ . '/../../fixtures/sniff_runner/default';
