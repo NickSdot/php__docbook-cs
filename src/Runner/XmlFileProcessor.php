@@ -48,8 +48,8 @@ final readonly class XmlFileProcessor
         $fileReport = new Violations($initialFile->path);
         $currentFile = $initialFile;
         $scope = $fileChange === null
-            ? SourceScope::wholeFile()
-            : SourceScope::fromFileChange($initialFile, $fileChange);
+            ? RunScope::wholeFile()
+            : RunScope::fromFileChange($initialFile, $fileChange);
         $seenContentHashes = [hash('sha256', $currentFile->content) => true];
         $fixPasses = 0;
 
@@ -109,7 +109,7 @@ final readonly class XmlFileProcessor
      * @return list<Fix|FixPlan>
      * @throws FixerException
      */
-    private function runSniffs(\DOMDocument $document, File $file, Violations $fileReport, SourceScope $scope): array
+    private function runSniffs(\DOMDocument $document, File $file, Violations $fileReport, RunScope $scope): array
     {
         $fixes = [];
 
