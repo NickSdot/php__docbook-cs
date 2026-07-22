@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DocbookCS\Report;
 
 use DocbookCS\Violation\Violation;
+use DocbookCS\Violation\Violations;
 
 final class Report
 {
@@ -25,10 +26,10 @@ final class Report
 
     public private(set) int $fixingPasses = 0;
 
-    /** @var array<string, FileReport> */
+    /** @var array<string, Violations> */
     public private(set) array $fileReports = [];
 
-    public function addFileReport(FileReport $fileReport): void
+    public function addFileReport(Violations $fileReport): void
     {
         $this->fileReports[$fileReport->filePath] = $fileReport;
     }

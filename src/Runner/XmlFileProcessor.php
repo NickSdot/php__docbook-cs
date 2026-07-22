@@ -7,15 +7,15 @@ namespace DocbookCS\Runner;
 use DocbookCS\Diff\FileChange;
 use DocbookCS\Fix\Fix;
 use DocbookCS\Fix\FixApplier;
-use DocbookCS\Fix\FixPlan;
 use DocbookCS\Fix\FixerException;
-use DocbookCS\Report\FileReport;
+use DocbookCS\Fix\FixPlan;
 use DocbookCS\Report\Report;
 use DocbookCS\Sniff\Fixable;
 use DocbookCS\Sniff\SniffInterface;
 use DocbookCS\Source\File;
 use DocbookCS\Violation\Severity;
 use DocbookCS\Violation\Violation;
+use DocbookCS\Violation\Violations;
 
 final readonly class XmlFileProcessor
 {
@@ -45,7 +45,7 @@ final readonly class XmlFileProcessor
     /** @throws FixerException */
     public function process(File $initialFile, ?FileChange $fileChange = null): XmlProcessingResult
     {
-        $fileReport = new FileReport($initialFile->path);
+        $fileReport = new Violations($initialFile->path);
         $currentFile = $initialFile;
         $scope = $fileChange === null
             ? SourceScope::wholeFile()
@@ -54,7 +54,7 @@ final readonly class XmlFileProcessor
         $fixPasses = 0;
 
         while (true) {
-            $passReport = new FileReport($currentFile->path);
+            $passReport = new Violations($currentFile->path);
 
             $document = $this->parseXml($currentFile, $passReport);
             if ($document === null) {
@@ -109,7 +109,7 @@ final readonly class XmlFileProcessor
      * @return list<Fix|FixPlan>
      * @throws FixerException
      */
-    private function runSniffs(\DOMDocument $document, File $file, FileReport $fileReport, SourceScope $scope): array
+    private function runSniffs(\DOMDocument $document, File $file, Violations $fileReport, SourceScope $scope): array
     {
         $fixes = [];
 
@@ -137,7 +137,7 @@ final readonly class XmlFileProcessor
         return $fixes;
     }
 
-    private function parseXml(File $file, FileReport $fileReport): ?\DOMDocument
+    private function parseXml(File $file, Violations $fileReport): ?\DOMDocument
     {
         $content = $this->preprocessor->processForParsing($file->content);
 

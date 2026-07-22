@@ -18,7 +18,6 @@ use DocbookCS\Path\PathLoader;
 use DocbookCS\Path\PathMatcher;
 use DocbookCS\Progress\NullProgress;
 use DocbookCS\Progress\ProgressInterface;
-use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
 use DocbookCS\Runner\EntityExpansionMarker;
 use DocbookCS\Runner\EntityPreprocessor;
@@ -37,6 +36,7 @@ use DocbookCS\Source\Line;
 use DocbookCS\Violation\Severity;
 use DocbookCS\Violation\SourceRange;
 use DocbookCS\Violation\Violation;
+use DocbookCS\Violation\Violations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -46,7 +46,7 @@ use PHPUnit\Framework\TestCase;
     CoversClass(ConfigData::class),
     CoversClass(EntityPreprocessor::class),
     CoversClass(EntityResolver::class),
-    CoversClass(FileReport::class),
+    CoversClass(Violations::class),
     CoversClass(NullProgress::class),
     CoversClass(PathLoader::class),
     CoversClass(PathMatcher::class),

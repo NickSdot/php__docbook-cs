@@ -24,14 +24,13 @@ use DocbookCS\Path\PathMatcher;
 use DocbookCS\Process\NativeProcessRunner;
 use DocbookCS\Process\ProcessResult;
 use DocbookCS\Progress\NullProgress;
-use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
 use DocbookCS\Report\Reporter\CheckstyleReporter;
 use DocbookCS\Report\Reporter\ConsoleReporter;
 use DocbookCS\Report\Reporter\JsonReporter;
 use DocbookCS\Runner\EntityPreprocessor;
-use DocbookCS\Runner\RunMode;
 use DocbookCS\Runner\RunCoordinator;
+use DocbookCS\Runner\RunMode;
 use DocbookCS\Runner\RunPlan;
 use DocbookCS\Runner\RunPlanner;
 use DocbookCS\Runner\RunScopeResolver;
@@ -41,6 +40,7 @@ use DocbookCS\Runner\XmlFileProcessor;
 use DocbookCS\Runner\XmlProcessingResult;
 use DocbookCS\Sniff\ExceptionNameSniff;
 use DocbookCS\Source\File;
+use DocbookCS\Violation\Violations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -57,7 +57,7 @@ use PHPUnit\Framework\TestCase;
     CoversClass(EntityPreprocessor::class),
     CoversClass(EntityResolver::class),
     CoversClass(ExceptionNameSniff::class),
-    CoversClass(FileReport::class),
+    CoversClass(Violations::class),
     CoversClass(JsonReporter::class),
     CoversClass(NullProgress::class),
     CoversClass(PathLoader::class),

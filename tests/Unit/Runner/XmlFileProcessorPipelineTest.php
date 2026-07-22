@@ -7,10 +7,10 @@ namespace DocbookCS\Tests\Unit\Runner;
 use DocbookCS\Runner\EntityPreprocessor;
 use DocbookCS\Runner\RunMode;
 use DocbookCS\Runner\XmlFileProcessor;
-use DocbookCS\Report\FileReport;
 use DocbookCS\Sniff\AttributeOrderSniff;
 use DocbookCS\Sniff\SniffInterface;
 use DocbookCS\Source\File;
+use DocbookCS\Violation\Violations;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -118,12 +118,12 @@ final class XmlFileProcessorPipelineTest extends TestCase
         );
     }
 
-    private function process(XmlFileProcessor $processor, string $content, string $path = 'input.xml'): FileReport
+    private function process(XmlFileProcessor $processor, string $content, string $path = 'input.xml'): Violations
     {
         return $processor->process(new File($path, $content))->fileReport;
     }
 
-    private function processFile(XmlFileProcessor $processor, string $path): FileReport
+    private function processFile(XmlFileProcessor $processor, string $path): Violations
     {
         $content = file_get_contents($path);
         self::assertIsString($content);

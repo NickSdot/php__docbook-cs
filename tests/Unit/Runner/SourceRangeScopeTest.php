@@ -7,10 +7,9 @@ namespace DocbookCS\Tests\Unit\Runner;
 use DocbookCS\Diff\FileChange;
 use DocbookCS\Fix\Fix;
 use DocbookCS\Fix\FixApplier;
+use DocbookCS\Fix\Fixer\SimparaFixer;
 use DocbookCS\Fix\FixPlan;
 use DocbookCS\Fix\FixResult;
-use DocbookCS\Fix\Fixer\SimparaFixer;
-use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
 use DocbookCS\Runner\EntityExpansionMarker;
 use DocbookCS\Runner\EntityPreprocessor;
@@ -24,6 +23,7 @@ use DocbookCS\Source\File;
 use DocbookCS\Source\Line;
 use DocbookCS\Violation\SourceRange;
 use DocbookCS\Violation\Violation;
+use DocbookCS\Violation\Violations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -38,7 +38,7 @@ use PHPUnit\Framework\TestCase;
     UsesClass(EntityPreprocessor::class),
     UsesClass(File::class),
     UsesClass(FileChange::class),
-    UsesClass(FileReport::class),
+    UsesClass(Violations::class),
     UsesClass(Fix::class),
     UsesClass(FixApplier::class),
     UsesClass(FixPlan::class),

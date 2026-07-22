@@ -5,18 +5,18 @@ declare(strict_types=1);
 namespace DocbookCS\Tests\Unit\Report;
 
 use DocbookCS\RelativePath;
-use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
 use DocbookCS\Violation\Severity;
 use DocbookCS\Violation\SourceRange;
 use DocbookCS\Violation\Violation;
+use DocbookCS\Violation\Violations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[
-    CoversClass(FileReport::class),
+    CoversClass(Violations::class),
     CoversClass(RelativePath::class),
     CoversClass(Report::class),
     CoversClass(Violation::class),
@@ -66,7 +66,7 @@ final class ReportTest extends TestCase
     public function itAddsFileReport(): void
     {
         $report = new Report();
-        $fileReport = new FileReport('src/chapter.xml');
+        $fileReport = new Violations('src/chapter.xml');
 
         $report->addFileReport($fileReport);
 
@@ -78,7 +78,7 @@ final class ReportTest extends TestCase
     public function itKeepsTheFileReportPathWhileRenderingItRelativeToWorkingDirectory(): void
     {
         $filePath = (getcwd() ?: '') . '/src/chapter.xml';
-        $fileReport = new FileReport($filePath);
+        $fileReport = new Violations($filePath);
 
         self::assertSame($filePath, $fileReport->filePath);
         self::assertSame('src/chapter.xml', RelativePath::fromWorkingDirectory($fileReport->filePath));
@@ -88,8 +88,8 @@ final class ReportTest extends TestCase
     public function itKeysFileReportsByFilePath(): void
     {
         $report = new Report();
-        $report->addFileReport(new FileReport('a.xml'));
-        $report->addFileReport(new FileReport('b.xml'));
+        $report->addFileReport(new Violations('a.xml'));
+        $report->addFileReport(new Violations('b.xml'));
 
         $keys = array_keys($report->fileReports);
 
@@ -100,8 +100,8 @@ final class ReportTest extends TestCase
     public function itOverwritesFileReportWithSamePath(): void
     {
         $report = new Report();
-        $first = new FileReport('file.xml');
-        $second = new FileReport('file.xml');
+        $first = new Violations('file.xml');
+        $second = new Violations('file.xml');
 
         $report->addFileReport($first);
         $report->addFileReport($second);
@@ -113,11 +113,11 @@ final class ReportTest extends TestCase
     #[Test]
     public function itReturnsTotalViolationsAcrossAllFiles(): void
     {
-        $file1 = new FileReport('a.xml');
+        $file1 = new Violations('a.xml');
         $file1->addViolation($this->createViolation(severity: Severity::ERROR));
         $file1->addViolation($this->createViolation(severity: Severity::WARNING));
 
-        $file2 = new FileReport('b.xml');
+        $file2 = new Violations('b.xml');
         $file2->addViolation($this->createViolation(severity: Severity::ERROR));
 
         $report = new Report();
@@ -138,11 +138,11 @@ final class ReportTest extends TestCase
     #[Test]
     public function itReturnsTotalErrorsAcrossAllFiles(): void
     {
-        $file1 = new FileReport('a.xml');
+        $file1 = new Violations('a.xml');
         $file1->addViolation($this->createViolation(severity: Severity::ERROR));
         $file1->addViolation($this->createViolation(severity: Severity::WARNING));
 
-        $file2 = new FileReport('b.xml');
+        $file2 = new Violations('b.xml');
         $file2->addViolation($this->createViolation(severity: Severity::ERROR));
         $file2->addViolation($this->createViolation(severity: Severity::ERROR));
 
@@ -164,11 +164,11 @@ final class ReportTest extends TestCase
     #[Test]
     public function itReturnsTotalWarningsAcrossAllFiles(): void
     {
-        $file1 = new FileReport('a.xml');
+        $file1 = new Violations('a.xml');
         $file1->addViolation($this->createViolation(severity: Severity::WARNING));
         $file1->addViolation($this->createViolation(severity: Severity::ERROR));
 
-        $file2 = new FileReport('b.xml');
+        $file2 = new Violations('b.xml');
         $file2->addViolation($this->createViolation(severity: Severity::WARNING));
         $file2->addViolation($this->createViolation(severity: Severity::WARNING));
 
@@ -190,7 +190,7 @@ final class ReportTest extends TestCase
     #[Test]
     public function itHasViolationsWhenViolationsExist(): void
     {
-        $fileReport = new FileReport('file.xml');
+        $fileReport = new Violations('file.xml');
         $fileReport->addViolation($this->createViolation());
 
         $report = new Report();
@@ -211,7 +211,7 @@ final class ReportTest extends TestCase
     public function itHasNoViolationsWhenFilesAreClean(): void
     {
         $report = new Report();
-        $report->addFileReport(new FileReport('clean.xml'));
+        $report->addFileReport(new Violations('clean.xml'));
 
         self::assertFalse($report->hasViolations());
     }
@@ -223,11 +223,11 @@ final class ReportTest extends TestCase
         $v2 = $this->createViolation(message: 'Second');
         $v3 = $this->createViolation(message: 'Third');
 
-        $file1 = new FileReport('a.xml');
+        $file1 = new Violations('a.xml');
         $file1->addViolation($v1);
         $file1->addViolation($v2);
 
-        $file2 = new FileReport('b.xml');
+        $file2 = new Violations('b.xml');
         $file2->addViolation($v3);
 
         $report = new Report();
@@ -253,7 +253,7 @@ final class ReportTest extends TestCase
     #[Test]
     public function itDoesNotCountWarningsAsErrors(): void
     {
-        $fileReport = new FileReport('file.xml');
+        $fileReport = new Violations('file.xml');
         $fileReport->addViolation($this->createViolation(severity: Severity::WARNING));
         $fileReport->addViolation($this->createViolation(severity: Severity::WARNING));
 
@@ -268,7 +268,7 @@ final class ReportTest extends TestCase
     #[Test]
     public function itDoesNotCountErrorsAsWarnings(): void
     {
-        $fileReport = new FileReport('file.xml');
+        $fileReport = new Violations('file.xml');
         $fileReport->addViolation($this->createViolation(severity: Severity::ERROR));
         $fileReport->addViolation($this->createViolation(severity: Severity::ERROR));
 

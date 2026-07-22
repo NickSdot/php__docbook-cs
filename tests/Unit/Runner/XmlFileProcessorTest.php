@@ -7,7 +7,6 @@ namespace DocbookCS\Tests\Unit\Runner;
 use DocbookCS\Diff\FileChange;
 use DocbookCS\Fix\Fixer\AttributeOrderFixer;
 use DocbookCS\Fix\FixerException;
-use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
 use DocbookCS\Runner\EntityPreprocessor;
 use DocbookCS\Runner\RunMode;
@@ -22,6 +21,7 @@ use DocbookCS\Source\Line;
 use DocbookCS\Violation\Severity;
 use DocbookCS\Violation\SourceRange;
 use DocbookCS\Violation\Violation;
+use DocbookCS\Violation\Violations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -29,7 +29,7 @@ use PHPUnit\Framework\TestCase;
 
 #[
     CoversClass(EntityPreprocessor::class),
-    CoversClass(FileReport::class),
+    CoversClass(Violations::class),
     CoversClass(Report::class),
     CoversClass(Violation::class),
     CoversClass(ViolationScopeFilter::class),
@@ -434,7 +434,7 @@ final class XmlFileProcessorTest extends TestCase
         string $content,
         string $path = 'input.xml',
         ?FileChange $fileChange = null,
-    ): FileReport {
+    ): Violations {
         return $processor->process(new File($path, $content), $fileChange)->fileReport;
     }
 
@@ -455,7 +455,7 @@ $body
 XML;
     }
 
-    private function assertInternalError(FileReport $report, string $messagePart): void
+    private function assertInternalError(Violations $report, string $messagePart): void
     {
         self::assertTrue($report->hasViolations());
         self::assertSame('DocbookCS.Internal', $report->getViolations()[0]->sniffCode);

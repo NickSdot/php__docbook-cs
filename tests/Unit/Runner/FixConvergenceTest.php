@@ -7,13 +7,12 @@ namespace DocbookCS\Tests\Unit\Runner;
 use DocbookCS\Diff\FileChange;
 use DocbookCS\Fix\Fix;
 use DocbookCS\Fix\FixApplier;
-use DocbookCS\Fix\FixPlan;
-use DocbookCS\Fix\FixResult;
 use DocbookCS\Fix\Fixer\AttributeOrderFixer;
 use DocbookCS\Fix\Fixer\ExceptionNameFixer;
 use DocbookCS\Fix\Fixer\SimparaFixer;
 use DocbookCS\Fix\FixerException;
-use DocbookCS\Report\FileReport;
+use DocbookCS\Fix\FixPlan;
+use DocbookCS\Fix\FixResult;
 use DocbookCS\Report\Report;
 use DocbookCS\Runner\EntityExpansionMarker;
 use DocbookCS\Runner\EntityPreprocessor;
@@ -32,6 +31,7 @@ use DocbookCS\Tests\Support\Fix\LineBreakFixer;
 use DocbookCS\Tests\Support\Fix\ToggleElementFixer;
 use DocbookCS\Violation\SourceRange;
 use DocbookCS\Violation\Violation;
+use DocbookCS\Violation\Violations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -48,7 +48,7 @@ use PHPUnit\Framework\TestCase;
     UsesClass(ExceptionNameSniff::class),
     UsesClass(File::class),
     UsesClass(FileChange::class),
-    UsesClass(FileReport::class),
+    UsesClass(Violations::class),
     UsesClass(Fix::class),
     UsesClass(FixApplier::class),
     UsesClass(FixerException::class),
@@ -351,7 +351,7 @@ final class FixConvergenceTest extends TestCase
         }
     }
 
-    private function processFile(XmlFileProcessor $processor, string $path, ?FileChange $fileChange = null): FileReport
+    private function processFile(XmlFileProcessor $processor, string $path, ?FileChange $fileChange = null): Violations
     {
         $content = file_get_contents($path);
         self::assertIsString($content);

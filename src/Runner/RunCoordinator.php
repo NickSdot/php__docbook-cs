@@ -8,12 +8,12 @@ use DocbookCS\Config\SniffEntry;
 use DocbookCS\Fix\FixerException;
 use DocbookCS\Progress\NullProgress;
 use DocbookCS\Progress\ProgressInterface;
-use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
 use DocbookCS\Sniff\SniffInterface;
 use DocbookCS\Source\File;
 use DocbookCS\Violation\Severity;
 use DocbookCS\Violation\Violation;
+use DocbookCS\Violation\Violations;
 
 final class RunCoordinator
 {
@@ -49,7 +49,7 @@ final class RunCoordinator
             $content = @file_get_contents($filePath);
 
             if ($content === false) {
-                $fileReport = new FileReport($filePath);
+                $fileReport = new Violations($filePath);
                 $fileReport->addViolation(new Violation(
                     sniffCode: 'DocbookCS.Internal',
                     filePath: $filePath,

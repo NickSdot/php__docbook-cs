@@ -5,19 +5,19 @@ declare(strict_types=1);
 namespace DocbookCS\Tests\Unit\Report\Reporter;
 
 use DocbookCS\RelativePath;
-use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
 use DocbookCS\Report\Reporter\JsonReporter;
 use DocbookCS\Violation\Severity;
 use DocbookCS\Violation\SourceRange;
 use DocbookCS\Violation\Violation;
+use DocbookCS\Violation\Violations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[
-    CoversClass(FileReport::class),
+    CoversClass(Violations::class),
     CoversClass(JsonReporter::class),
     CoversClass(Report::class),
     CoversClass(Violation::class),
@@ -90,10 +90,10 @@ final class JsonReporterTest extends TestCase
     public function itCountsScannedFiles(): void
     {
         $report = new Report();
-        $report->addFileReport(new FileReport('a.xml'));
+        $report->addFileReport(new Violations('a.xml'));
         $report->incrementFilesScanned();
 
-        $report->addFileReport(new FileReport('b.xml'));
+        $report->addFileReport(new Violations('b.xml'));
         $report->incrementFilesScanned();
 
         $data = $this->parseOutput($this->reporter->generate($report));
@@ -125,7 +125,7 @@ final class JsonReporterTest extends TestCase
     public function itSkipsFilesWithNoViolations(): void
     {
         $report = new Report();
-        $report->addFileReport(new FileReport('clean.xml'));
+        $report->addFileReport(new Violations('clean.xml'));
 
         $data = $this->parseOutput($this->reporter->generate($report));
 
@@ -135,7 +135,7 @@ final class JsonReporterTest extends TestCase
     #[Test]
     public function itIncludesFileWithViolations(): void
     {
-        $fileReport = new FileReport('dirty.xml');
+        $fileReport = new Violations('dirty.xml');
         $fileReport->addViolation($this->createViolation());
 
         $report = new Report();
@@ -149,7 +149,7 @@ final class JsonReporterTest extends TestCase
     #[Test]
     public function itSetsViolationCountPerFile(): void
     {
-        $fileReport = new FileReport('file.xml');
+        $fileReport = new Violations('file.xml');
         $fileReport->addViolation($this->createViolation(message: 'First'));
         $fileReport->addViolation($this->createViolation(message: 'Second'));
 
@@ -164,7 +164,7 @@ final class JsonReporterTest extends TestCase
     #[Test]
     public function itSetsLineInMessage(): void
     {
-        $fileReport = new FileReport('file.xml');
+        $fileReport = new Violations('file.xml');
         $fileReport->addViolation($this->createViolation(line: 42));
 
         $report = new Report();
@@ -178,7 +178,7 @@ final class JsonReporterTest extends TestCase
     #[Test]
     public function itSetsSeverityInMessage(): void
     {
-        $fileReport = new FileReport('file.xml');
+        $fileReport = new Violations('file.xml');
         $fileReport->addViolation($this->createViolation(severity: Severity::WARNING));
 
         $report = new Report();
@@ -192,7 +192,7 @@ final class JsonReporterTest extends TestCase
     #[Test]
     public function itSetsMessageInMessage(): void
     {
-        $fileReport = new FileReport('file.xml');
+        $fileReport = new Violations('file.xml');
         $fileReport->addViolation($this->createViolation(message: 'Use <simpara> instead'));
 
         $report = new Report();
@@ -206,7 +206,7 @@ final class JsonReporterTest extends TestCase
     #[Test]
     public function itSetsSourceInMessage(): void
     {
-        $fileReport = new FileReport('file.xml');
+        $fileReport = new Violations('file.xml');
         $fileReport->addViolation($this->createViolation(sniffCode: 'DocbookCS.ExceptionName'));
 
         $report = new Report();
@@ -220,7 +220,7 @@ final class JsonReporterTest extends TestCase
     #[Test]
     public function itOutputsMultipleViolationsForOneFile(): void
     {
-        $fileReport = new FileReport('multi.xml');
+        $fileReport = new Violations('multi.xml');
         $fileReport->addViolation($this->createViolation(message: 'First', line: 5));
         $fileReport->addViolation($this->createViolation(message: 'Second', line: 10));
         $fileReport->addViolation($this->createViolation(message: 'Third', line: 20));
@@ -236,10 +236,10 @@ final class JsonReporterTest extends TestCase
     #[Test]
     public function itOutputsMultipleFilesWithViolations(): void
     {
-        $file1 = new FileReport('first.xml');
+        $file1 = new Violations('first.xml');
         $file1->addViolation($this->createViolation(message: 'Issue A'));
 
-        $file2 = new FileReport('second.xml');
+        $file2 = new Violations('second.xml');
         $file2->addViolation($this->createViolation(message: 'Issue B'));
 
         $report = new Report();
@@ -256,9 +256,9 @@ final class JsonReporterTest extends TestCase
     #[Test]
     public function itSkipsCleanFilesAmongDirtyOnes(): void
     {
-        $cleanFile = new FileReport('clean.xml');
+        $cleanFile = new Violations('clean.xml');
 
-        $dirtyFile = new FileReport('dirty.xml');
+        $dirtyFile = new Violations('dirty.xml');
         $dirtyFile->addViolation($this->createViolation());
 
         $report = new Report();
@@ -275,11 +275,11 @@ final class JsonReporterTest extends TestCase
     #[Test]
     public function itCountsTotalViolations(): void
     {
-        $file1 = new FileReport('a.xml');
+        $file1 = new Violations('a.xml');
         $file1->addViolation($this->createViolation());
         $file1->addViolation($this->createViolation());
 
-        $file2 = new FileReport('b.xml');
+        $file2 = new Violations('b.xml');
         $file2->addViolation($this->createViolation());
 
         $report = new Report();
@@ -294,7 +294,7 @@ final class JsonReporterTest extends TestCase
     #[Test]
     public function itCountsTotalErrors(): void
     {
-        $fileReport = new FileReport('file.xml');
+        $fileReport = new Violations('file.xml');
         $fileReport->addViolation($this->createViolation(severity: Severity::ERROR));
         $fileReport->addViolation($this->createViolation(severity: Severity::WARNING));
         $fileReport->addViolation($this->createViolation(severity: Severity::ERROR));
@@ -310,7 +310,7 @@ final class JsonReporterTest extends TestCase
     #[Test]
     public function itCountsTotalWarnings(): void
     {
-        $fileReport = new FileReport('file.xml');
+        $fileReport = new Violations('file.xml');
         $fileReport->addViolation($this->createViolation(severity: Severity::WARNING));
         $fileReport->addViolation($this->createViolation(severity: Severity::ERROR));
         $fileReport->addViolation($this->createViolation(severity: Severity::WARNING));
@@ -326,7 +326,7 @@ final class JsonReporterTest extends TestCase
     #[Test]
     public function itDoesNotEscapeSlashesInOutput(): void
     {
-        $fileReport = new FileReport('path/to/file.xml');
+        $fileReport = new Violations('path/to/file.xml');
         $fileReport->addViolation($this->createViolation());
 
         $report = new Report();
@@ -341,7 +341,7 @@ final class JsonReporterTest extends TestCase
     #[Test]
     public function itRendersAbsoluteFilePathRelativeToWorkingDirectory(): void
     {
-        $fileReport = new FileReport((getcwd() ?: '') . '/path/to/file.xml');
+        $fileReport = new Violations((getcwd() ?: '') . '/path/to/file.xml');
         $fileReport->addViolation($this->createViolation());
 
         $report = new Report();

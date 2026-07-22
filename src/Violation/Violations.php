@@ -2,12 +2,9 @@
 
 declare(strict_types=1);
 
-namespace DocbookCS\Report;
+namespace DocbookCS\Violation;
 
-use DocbookCS\Violation\Severity;
-use DocbookCS\Violation\Violation;
-
-final class FileReport
+final class Violations
 {
     /** @var list<Violation> */
     private array $violations = [];

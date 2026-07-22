@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace DocbookCS\Runner;
 
 use DocbookCS\Fix\FixerException;
-use DocbookCS\Report\FileReport;
 use DocbookCS\Source\File;
+use DocbookCS\Violation\Violations;
 
 final readonly class XmlProcessingResult
 {
     public function __construct(
-        public FileReport $fileReport,
+        public Violations $fileReport,
         public File $initialFile,
         public File $currentFile,
     ) {
