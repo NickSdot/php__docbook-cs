@@ -159,10 +159,8 @@ final class SniffRunnerTest extends TestCase
                     new Violation(
                         sniffCode: 'Test.ViolatingSniff',
                         filePath: $file->path,
-                        line: 1,
-                        beginOffset: 0,
-                        untilOffset: 0,
                         message: 'Test violation message',
+                        affectedRanges: [new SourceRange(1, 0, 0)],
                         severity: Severity::WARNING,
                     ),
                 ];
@@ -202,10 +200,8 @@ final class SniffRunnerTest extends TestCase
                     new Violation(
                         sniffCode: 'Test.ViolatingSniff',
                         filePath: $file->path,
-                        line: 1,
-                        beginOffset: 0,
-                        untilOffset: 0,
                         message: 'Test violation',
+                        affectedRanges: [new SourceRange(1, 0, 0)],
                         severity: Severity::WARNING,
                     ),
                 ];
@@ -405,10 +401,8 @@ final class SniffRunnerTest extends TestCase
                     new Violation(
                         sniffCode: 'Test.ViolatingSniff',
                         filePath: $file->path,
-                        line: 1,
-                        beginOffset: 0,
-                        untilOffset: 0,
                         message: 'Test violation',
+                        affectedRanges: [new SourceRange(1, 0, 0)],
                         severity: Severity::WARNING,
                     ),
                 ];

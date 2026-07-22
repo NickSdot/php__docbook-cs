@@ -6,6 +6,7 @@ namespace DocbookCS\Sniff;
 
 use DocbookCS\Fix\Fixer\WhitespaceFixer;
 use DocbookCS\Source\File;
+use DocbookCS\Violation\SourceRange;
 
 /**
  * Backward-compatible aggregate of the focused whitespace rules.
@@ -15,7 +16,6 @@ final class WhitespaceSniff extends AbstractSniff implements Fixable
 {
     private const string LINE_ENDING_PATTERN = '/(\r\n|\n|\r)/';
     private const string WHITESPACE_PATTERN = '/([ \t]+$)|^(\t* +\t+|\t+ +\t*)|^( +)\t/';
-
     public static function getCode(): string
     {
         return 'DocbookCS.Whitespace';
@@ -26,7 +26,10 @@ final class WhitespaceSniff extends AbstractSniff implements Fixable
         return WhitespaceFixer::class;
     }
 
-    /** @throws \LogicException if an invalid severity level is configured */
+    /**
+     * @throws \InvalidArgumentException if a generated source range is inconsistent
+     * @throws \LogicException if source content cannot be split into lines
+     */
     public function process(\DOMDocument $document, File $file): array
     {
         $violations = [];
@@ -52,11 +55,8 @@ final class WhitespaceSniff extends AbstractSniff implements Fixable
 
                 $violations[] = $this->createViolation(
                     $file->path,
-                    $line,
-                    $offset,
-                    $offset + $lineContentLength,
                     $message,
-                    $lineContent,
+                    [new SourceRange($line, $offset, $offset + $lineContentLength, $lineContent)],
                 );
             }
 

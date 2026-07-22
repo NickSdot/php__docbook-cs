@@ -18,7 +18,6 @@ use DocbookCS\Source\File;
 final class ExceptionNameSniff extends AbstractSniff implements Fixable
 {
     private const string ELEMENT_NAME = 'classname';
-
     /**
      * Default suffixes that indicate the class is an exception or error.
      * @var list<string>
@@ -42,6 +41,7 @@ final class ExceptionNameSniff extends AbstractSniff implements Fixable
     }
 
     /**
+     * @throws \InvalidArgumentException if a generated source range is inconsistent
      * @throws \LogicException
      * @throws \OutOfBoundsException if a matched tag offset lies outside the source
      */
@@ -92,12 +92,8 @@ final class ExceptionNameSniff extends AbstractSniff implements Fixable
 
             $violations[] = $this->createViolation(
                 $file->path,
-                $affectedRanges[0]->line,
-                $match['beginOffset'],
-                $match['untilOffset'],
                 sprintf('"%s" is wrapped in <classname> but should use <exceptionname>.', $text),
-                $match['content'],
-                affectedRanges: $affectedRanges,
+                $affectedRanges,
             );
         }
 
@@ -115,8 +111,6 @@ final class ExceptionNameSniff extends AbstractSniff implements Fixable
     /**
      * @return list<array{
      *     beginOffset: int,
-     *     untilOffset: int,
-     *     content: string,
      *     text: string,
      *     closingOffset: int
      * }>
@@ -136,8 +130,6 @@ final class ExceptionNameSniff extends AbstractSniff implements Fixable
             $closingOffset = $offset + (int) strrpos($fullMatch, '</classname>');
             $sourceMatches[] = [
                 'beginOffset' => $offset,
-                'untilOffset' => $offset + strlen($fullMatch),
-                'content' => $fullMatch,
                 'text' => trim($matches[1][$i][0]),
                 'closingOffset' => $closingOffset,
             ];

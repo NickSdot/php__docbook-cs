@@ -7,7 +7,7 @@ namespace DocbookCS\Violation;
 final class Violations
 {
     /** @var list<Violation> */
-    private array $violations = [];
+    public private(set) array $violations = [];
 
     public function __construct(
         public readonly string $filePath,

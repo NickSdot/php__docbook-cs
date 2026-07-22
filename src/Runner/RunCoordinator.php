@@ -11,7 +11,6 @@ use DocbookCS\Progress\ProgressInterface;
 use DocbookCS\Report\Report;
 use DocbookCS\Sniff\SniffInterface;
 use DocbookCS\Source\File;
-use DocbookCS\Violation\Severity;
 use DocbookCS\Violation\Violation;
 use DocbookCS\Violation\Violations;
 
@@ -25,6 +24,7 @@ final class RunCoordinator
     }
 
     /**
+     * @throws \InvalidArgumentException if an internal violation is inconsistent
      * @throws \RuntimeException if a sniff class cannot be found or does not implement SniffInterface.
      * @throws FixerException
      */
@@ -50,15 +50,7 @@ final class RunCoordinator
 
             if ($content === false) {
                 $fileReport = new Violations($filePath);
-                $fileReport->addViolation(new Violation(
-                    sniffCode: 'DocbookCS.Internal',
-                    filePath: $filePath,
-                    line: 0,
-                    beginOffset: 0,
-                    untilOffset: 0,
-                    message: 'Could not read file.',
-                    severity: Severity::ERROR,
-                ));
+                $fileReport->addViolation(Violation::fromFileReadFailure($filePath));
             } else {
                 $file = new File($filePath, $content);
                 $result = $processor->process($file, $fileChange);

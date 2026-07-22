@@ -114,7 +114,8 @@ final class SimparaSniff extends AbstractSniff implements Fixable
     }
 
     /**
-     * @throws \LogicException if an invalid severity level is configured
+     * @throws \InvalidArgumentException if a generated source range is inconsistent
+     * @throws \LogicException if a source match cannot be mapped
      * @throws \OutOfBoundsException if a matched tag offset lies outside the source
      */
     public function process(\DOMDocument $document, File $file): array
@@ -173,12 +174,8 @@ final class SimparaSniff extends AbstractSniff implements Fixable
 
             $violations[] = $this->createViolation(
                 $file->path,
-                $affectedRanges[0]->line,
-                $match['beginOffset'],
-                $match['untilOffset'],
                 self::MESSAGE,
-                $match['content'],
-                affectedRanges: $affectedRanges,
+                $affectedRanges,
             );
         }
 
@@ -225,8 +222,6 @@ final class SimparaSniff extends AbstractSniff implements Fixable
     /**
      * @return list<array{
      *     beginOffset: int,
-     *     untilOffset: int,
-     *     content: string,
      *     selfClosing: bool,
      *     closingOffset: int|null
      * }>
@@ -250,8 +245,6 @@ final class SimparaSniff extends AbstractSniff implements Fixable
             if (str_ends_with(rtrim($tag), '/>')) {
                 $sourceMatches[] = [
                     'beginOffset' => $offset,
-                    'untilOffset' => $offset + strlen($tag),
-                    'content' => $tag,
                     'selfClosing' => true,
                     'closingOffset' => null,
                 ];
@@ -267,11 +260,8 @@ final class SimparaSniff extends AbstractSniff implements Fixable
                 continue;
             }
 
-            $untilOffset = $offset + strlen($tag);
             $sourceMatches[] = [
                 'beginOffset' => $opening,
-                'untilOffset' => $untilOffset,
-                'content' => substr($file->content, $opening, $untilOffset - $opening),
                 'selfClosing' => false,
                 'closingOffset' => $offset,
             ];
