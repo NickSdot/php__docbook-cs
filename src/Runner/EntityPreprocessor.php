@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace DocbookCS\Runner;
 
-final class EntityPreprocessor
+final readonly class EntityPreprocessor
 {
     private const array PREDEFINED = ['amp', 'lt', 'gt', 'quot', 'apos'];
     private const string ENTITY_PATTERN = '&([a-zA-Z_][\w.\-]*);';
