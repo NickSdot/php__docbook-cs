@@ -24,11 +24,13 @@ use DocbookCS\Path\PathMatcher;
 use DocbookCS\Process\NativeProcessRunner;
 use DocbookCS\Process\ProcessResult;
 use DocbookCS\Progress\NullProgress;
+use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
 use DocbookCS\Report\Reporter\CheckstyleReporter;
 use DocbookCS\Report\Reporter\ConsoleReporter;
 use DocbookCS\Report\Reporter\JsonReporter;
 use DocbookCS\Runner\EntityPreprocessor;
+use DocbookCS\Runner\XmlFileProcessor;
 use DocbookCS\Runner\RunCoordinator;
 use DocbookCS\Runner\RunMode;
 use DocbookCS\Runner\RunPlan;
@@ -36,11 +38,9 @@ use DocbookCS\Runner\RunPlanner;
 use DocbookCS\Runner\RunScope;
 use DocbookCS\Runner\RunScopeResolver;
 use DocbookCS\Runner\ViolationScopeFilter;
-use DocbookCS\Runner\XmlFileProcessor;
-use DocbookCS\Runner\XmlProcessingResult;
+use DocbookCS\Runner\XmlSniffRunner;
 use DocbookCS\Sniff\ExceptionNameSniff;
 use DocbookCS\Source\File;
-use DocbookCS\Violation\Violations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -57,7 +57,7 @@ use PHPUnit\Framework\TestCase;
     CoversClass(EntityPreprocessor::class),
     CoversClass(EntityResolver::class),
     CoversClass(ExceptionNameSniff::class),
-    CoversClass(Violations::class),
+    CoversClass(FileReport::class),
     CoversClass(JsonReporter::class),
     CoversClass(NullProgress::class),
     CoversClass(PathLoader::class),
@@ -68,7 +68,7 @@ use PHPUnit\Framework\TestCase;
     CoversClass(RunPlan::class),
     CoversClass(RunPlanner::class),
     CoversClass(SniffEntry::class),
-    CoversClass(XmlFileProcessor::class),
+    CoversClass(XmlSniffRunner::class),
     //
     UsesClass(DiffBaseResolver::class),
     UsesClass(DiffChangeset::class),
@@ -84,7 +84,7 @@ use PHPUnit\Framework\TestCase;
     UsesClass(RunScopeResolver::class),
     UsesClass(UpstreamResolver::class),
     UsesClass(ViolationScopeFilter::class),
-    UsesClass(XmlProcessingResult::class),
+    UsesClass(XmlFileProcessor::class),
 ]
 final class ApplicationTest extends TestCase
 {

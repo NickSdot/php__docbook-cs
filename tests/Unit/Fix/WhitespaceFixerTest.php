@@ -9,7 +9,6 @@ use DocbookCS\Fix\FixApplier;
 use DocbookCS\Fix\FixPlan;
 use DocbookCS\Fix\Fixer\WhitespaceFixer;
 use DocbookCS\Fix\FixResult;
-use DocbookCS\Runner\RunMode;
 use DocbookCS\Sniff\WhitespaceSniff;
 use DocbookCS\Source\File;
 use DocbookCS\Violation\SourceRange;
@@ -23,7 +22,6 @@ use PHPUnit\Framework\TestCase;
     CoversClass(Fix::class),
     CoversClass(FixApplier::class),
     CoversClass(FixResult::class),
-    CoversClass(RunMode::class),
     CoversClass(Violation::class),
     CoversClass(WhitespaceFixer::class),
     CoversClass(WhitespaceSniff::class),
@@ -38,10 +36,11 @@ final class WhitespaceFixerTest extends TestCase
     public function itFixesOnlySniffedLines(): void
     {
         $content = "<root> \n \t<tag/>\n</root>";
-        $document = $this->createDocument($content);
+        $document = new \DOMDocument();
+        $document->loadXML($content);
         $source = new File('file.xml', $content);
 
-        $violations = new WhitespaceSniff(RunMode::Fix)->process($document, $source);
+        $violations = new WhitespaceSniff()->process($document, $source);
 
         $secondLineOffset = (int) strpos($content, " \t<tag/>");
 
@@ -63,13 +62,5 @@ final class WhitespaceFixerTest extends TestCase
 
         self::assertSame("<root>\n  <tag/>\n</root>", $result->file->content);
         self::assertSame(2, $result->applied);
-    }
-
-    private function createDocument(string $xml): \DOMDocument
-    {
-        $document = new \DOMDocument();
-        $document->loadXML($xml);
-
-        return $document;
     }
 }

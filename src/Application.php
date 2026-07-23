@@ -127,7 +127,7 @@ final class Application
         $progress = $this->createProgress($options);
 
         try {
-            $report = new RunCoordinator($progress)->run($runPlan);
+            $report = new RunCoordinator($progress, collectPerformance: $options['perf'])->runWithMetrics($runPlan);
         } catch (\Throwable $e) {
             $this->writeError('Runtime error: ' . $e->getMessage() . PHP_EOL);
 
@@ -142,7 +142,7 @@ final class Application
 
         $this->write($reporter->generate($report));
 
-        return (int) $report->hasViolations();
+        return (int) $report->hasFinalViolations();
     }
 
     /**

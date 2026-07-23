@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace DocbookCS\Sniff;
 
 use DocbookCS\Runner\EntityExpansionMarker;
-use DocbookCS\Runner\RunMode;
 use DocbookCS\Source\File;
 use DocbookCS\Violation\Severity;
 use DocbookCS\Violation\SourceRange;
@@ -23,11 +22,6 @@ abstract class AbstractSniff implements SniffInterface
 
     /** @var array<string, string> */
     protected array $properties = [];
-
-    public function __construct(
-        public RunMode $mode = RunMode::Sniff,
-    ) {
-    }
 
     /** @throws \InvalidArgumentException if a configured severity is invalid */
     public function setProperty(string $name, string $value): void
@@ -69,17 +63,15 @@ abstract class AbstractSniff implements SniffInterface
         $elementNameLength = strlen($elementName);
 
         return [
-            new SourceRange(
-                $file->lineNumberAtOffset($openingNameOffset),
+            SourceRange::fromFile(
+                $file,
                 $openingNameOffset,
                 $openingNameOffset + $elementNameLength,
-                $elementName,
             ),
-            new SourceRange(
-                $file->lineNumberAtOffset($closingNameOffset),
+            SourceRange::fromFile(
+                $file,
                 $closingNameOffset,
                 $closingNameOffset + $elementNameLength,
-                $elementName,
             ),
         ];
     }

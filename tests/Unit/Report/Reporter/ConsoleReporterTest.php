@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace DocbookCS\Tests\Unit\Report\Reporter;
 
 use DocbookCS\RelativePath;
+use DocbookCS\Report\FileReport;
 use DocbookCS\Report\Report;
 use DocbookCS\Report\Reporter\ConsoleReporter;
 use DocbookCS\Violation\Severity;
 use DocbookCS\Violation\SourceRange;
 use DocbookCS\Violation\Violation;
-use DocbookCS\Violation\Violations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -18,7 +18,7 @@ use PHPUnit\Framework\TestCase;
 
 #[
     CoversClass(ConsoleReporter::class),
-    CoversClass(Violations::class),
+    CoversClass(FileReport::class),
     CoversClass(Report::class),
     CoversClass(Violation::class),
     //
@@ -39,9 +39,8 @@ final class ConsoleReporterTest extends TestCase
         int $line = 1,
         string $sniffCode = 'DocbookCS.Test',
         Severity $severity = Severity::ERROR,
-        string $filePath = 'filepath.xml',
     ): Violation {
-        return new Violation($sniffCode, $filePath, $message, [new SourceRange($line, 0, 0)], severity: $severity);
+        return new Violation($sniffCode, 'filepath.xml', $message, [new SourceRange($line, 0, 0)], severity: $severity);
     }
 
     #[Test]
@@ -58,8 +57,7 @@ final class ConsoleReporterTest extends TestCase
     public function itShowsOkSummaryWhenNoViolations(): void
     {
         $report = new Report();
-        $report->addFileReport(new Violations('clean.xml'));
-        $report->incrementFilesScanned();
+        $report->addFileReport(new FileReport('clean.xml'));
 
         $output = $this->reporter->generate($report);
 
@@ -71,8 +69,14 @@ final class ConsoleReporterTest extends TestCase
     public function itShowsNoViolationsRemainingAfterFixing(): void
     {
         $report = new Report();
-        $report->incrementFilesScanned();
-        $report->recordFixPass(applied: 1, skipped: 0);
+
+        $fileReport = new FileReport('fixed.xml');
+        $violation = $this->createViolation();
+        $fileReport->addFoundViolations([$violation]);
+        $fileReport->addFinalViolations([]);
+        $fileReport->recordFixingPass();
+
+        $report->addFileReport($fileReport);
 
         $output = $this->reporter->generate($report);
 
@@ -82,13 +86,13 @@ final class ConsoleReporterTest extends TestCase
     #[Test]
     public function itShowsViolationsRemainingAfterFixing(): void
     {
-        $fileReport = new Violations('dirty.xml');
-        $fileReport->addViolation($this->createViolation());
+        $fileReport = new FileReport('dirty.xml');
+        $violation = $this->createViolation();
+        $fileReport->addFoundViolations([$violation]);
+        $fileReport->recordFixingPass();
 
         $report = new Report();
         $report->addFileReport($fileReport);
-        $report->incrementFilesScanned();
-        $report->recordFixPass(applied: 0, skipped: 1);
 
         $output = $this->reporter->generate($report);
 
@@ -98,13 +102,14 @@ final class ConsoleReporterTest extends TestCase
     #[Test]
     public function itShowsViolationSummaryWhenViolationsExist(): void
     {
-        $fileReport = new Violations('dirty.xml');
-        $fileReport->addViolation($this->createViolation(severity: Severity::ERROR));
-        $fileReport->addViolation($this->createViolation(severity: Severity::WARNING));
+        $fileReport = new FileReport('dirty.xml');
+        $fileReport->addFoundViolations([
+            $this->createViolation(),
+            $this->createViolation(severity: Severity::WARNING),
+        ]);
 
         $report = new Report();
         $report->addFileReport($fileReport);
-        $report->incrementFilesScanned();
 
         $output = $this->reporter->generate($report);
 
@@ -114,12 +119,13 @@ final class ConsoleReporterTest extends TestCase
     #[Test]
     public function itShowsRemainingViolationsAfterFixing(): void
     {
-        $fileReport = new Violations('dirty.xml');
-        $fileReport->addViolation($this->createViolation());
+        $fileReport = new FileReport('dirty.xml');
+        $violation = $this->createViolation();
+        $fileReport->addFoundViolations([$violation]);
+        $fileReport->recordFixingPass();
 
         $report = new Report();
         $report->addFileReport($fileReport);
-        $report->recordFixPass(applied: 1, skipped: 0);
 
         $output = $this->reporter->generate($report);
 
@@ -133,11 +139,22 @@ final class ConsoleReporterTest extends TestCase
     public function itShowsFixingStatistics(): void
     {
         $report = new Report();
-        $report->recordModifiedFile();
-        $report->recordModifiedFile();
-        $report->recordFixPass(applied: 3, skipped: 1);
-        $report->recordFixPass(applied: 2, skipped: 1);
-        $report->recordFixPass(applied: 2, skipped: 0);
+
+        $first = new FileReport('first.xml');
+        $first->markChanged();
+        $first->recordFixingPass();
+        $first->recordFixingPass();
+        $first->addFoundViolations(array_fill(0, 4, $this->createViolation()));
+        $first->addFinalViolations([$this->createViolation()]);
+
+        $second = new FileReport('second.xml');
+        $second->markChanged();
+        $second->recordFixingPass();
+        $second->addFoundViolations(array_fill(0, 3, $this->createViolation()));
+        $second->addFinalViolations([$this->createViolation()]);
+
+        $report->addFileReport($first);
+        $report->addFileReport($second);
 
         $output = $this->reporter->generate($report);
 
@@ -145,7 +162,7 @@ final class ConsoleReporterTest extends TestCase
             'FIXING',
             str_repeat('-', 40),
             sprintf(' %-40s %d', 'Files changed', 2),
-            sprintf(' %-40s %d', 'Fixes applied', 7),
+            sprintf(' %-40s %d', 'Fixes applied', 5),
             sprintf(' %-40s %d', 'Fixes skipped', 2),
             sprintf(' %-40s %d', 'Fixing passes', 3),
         ]);
@@ -156,8 +173,8 @@ final class ConsoleReporterTest extends TestCase
     #[Test]
     public function itShowsFilePathInHeader(): void
     {
-        $fileReport = new Violations('src/broken.xml');
-        $fileReport->addViolation($this->createViolation());
+        $fileReport = new FileReport('src/broken.xml');
+        $fileReport->addFoundViolations([$this->createViolation()]);
 
         $report = new Report();
         $report->addFileReport($fileReport);
@@ -170,8 +187,8 @@ final class ConsoleReporterTest extends TestCase
     #[Test]
     public function itRendersAbsoluteFilePathRelativeToWorkingDirectory(): void
     {
-        $fileReport = new Violations((getcwd() ?: '') . '/src/broken.xml');
-        $fileReport->addViolation($this->createViolation());
+        $fileReport = new FileReport((getcwd() ?: '') . '/src/broken.xml');
+        $fileReport->addFoundViolations([$this->createViolation()]);
 
         $report = new Report();
         $report->addFileReport($fileReport);
@@ -184,8 +201,8 @@ final class ConsoleReporterTest extends TestCase
     #[Test]
     public function itShowsDashSeparatorAfterFileHeader(): void
     {
-        $fileReport = new Violations('file.xml');
-        $fileReport->addViolation($this->createViolation());
+        $fileReport = new FileReport('file.xml');
+        $fileReport->addFoundViolations([$this->createViolation()]);
 
         $report = new Report();
         $report->addFileReport($fileReport);
@@ -200,8 +217,8 @@ final class ConsoleReporterTest extends TestCase
     public function itCapsTheDashSeparatorAt80Characters(): void
     {
         $longPath = str_repeat('a', 200) . '.xml';
-        $fileReport = new Violations($longPath);
-        $fileReport->addViolation($this->createViolation());
+        $fileReport = new FileReport($longPath);
+        $fileReport->addFoundViolations([$this->createViolation()]);
 
         $report = new Report();
         $report->addFileReport($fileReport);
@@ -215,8 +232,8 @@ final class ConsoleReporterTest extends TestCase
     #[Test]
     public function itShowsLineNumberInViolation(): void
     {
-        $fileReport = new Violations('file.xml');
-        $fileReport->addViolation($this->createViolation(line: 42));
+        $fileReport = new FileReport('file.xml');
+        $fileReport->addFoundViolations([$this->createViolation(line: 42)]);
 
         $report = new Report();
         $report->addFileReport($fileReport);
@@ -229,8 +246,8 @@ final class ConsoleReporterTest extends TestCase
     #[Test]
     public function itRightAlignsLineNumberIn4CharWidth(): void
     {
-        $fileReport = new Violations('file.xml');
-        $fileReport->addViolation($this->createViolation(line: 5));
+        $fileReport = new FileReport('file.xml');
+        $fileReport->addFoundViolations([$this->createViolation(line: 5)]);
 
         $report = new Report();
         $report->addFileReport($fileReport);
@@ -243,8 +260,8 @@ final class ConsoleReporterTest extends TestCase
     #[Test]
     public function itShowsMessageInViolation(): void
     {
-        $fileReport = new Violations('file.xml');
-        $fileReport->addViolation($this->createViolation(message: 'Use <simpara> instead'));
+        $fileReport = new FileReport('file.xml');
+        $fileReport->addFoundViolations([$this->createViolation(message: 'Use <simpara> instead')]);
 
         $report = new Report();
         $report->addFileReport($fileReport);
@@ -257,8 +274,8 @@ final class ConsoleReporterTest extends TestCase
     #[Test]
     public function itShowsSniffCodeInViolation(): void
     {
-        $fileReport = new Violations('file.xml');
-        $fileReport->addViolation($this->createViolation(sniffCode: 'DocbookCS.ExceptionName'));
+        $fileReport = new FileReport('file.xml');
+        $fileReport->addFoundViolations([$this->createViolation(sniffCode: 'DocbookCS.ExceptionName')]);
 
         $report = new Report();
         $report->addFileReport($fileReport);
@@ -271,8 +288,8 @@ final class ConsoleReporterTest extends TestCase
     #[Test]
     public function itShowsErrorSeverityLabel(): void
     {
-        $fileReport = new Violations('file.xml');
-        $fileReport->addViolation($this->createViolation(severity: Severity::ERROR));
+        $fileReport = new FileReport('file.xml');
+        $fileReport->addFoundViolations([$this->createViolation()]);
 
         $report = new Report();
         $report->addFileReport($fileReport);
@@ -285,10 +302,12 @@ final class ConsoleReporterTest extends TestCase
     #[Test]
     public function itShowsMultipleViolationsForOneFile(): void
     {
-        $fileReport = new Violations('multi.xml');
-        $fileReport->addViolation($this->createViolation(message: 'First issue', line: 5));
-        $fileReport->addViolation($this->createViolation(message: 'Second issue', line: 10));
-        $fileReport->addViolation($this->createViolation(message: 'Third issue', line: 20));
+        $fileReport = new FileReport('multi.xml');
+        $fileReport->addFoundViolations([
+            $this->createViolation(message: 'First issue', line: 5),
+            $this->createViolation(message: 'Second issue', line: 10),
+            $this->createViolation(message: 'Third issue', line: 20),
+        ]);
 
         $report = new Report();
         $report->addFileReport($fileReport);
@@ -303,11 +322,11 @@ final class ConsoleReporterTest extends TestCase
     #[Test]
     public function itShowsMultipleFileHeaders(): void
     {
-        $file1 = new Violations('first.xml');
-        $file1->addViolation($this->createViolation(message: 'Issue A'));
+        $file1 = new FileReport('first.xml');
+        $file1->addFoundViolations([$this->createViolation(message: 'Issue A')]);
 
-        $file2 = new Violations('second.xml');
-        $file2->addViolation($this->createViolation(message: 'Issue B'));
+        $file2 = new FileReport('second.xml');
+        $file2->addFoundViolations([$this->createViolation(message: 'Issue B')]);
 
         $report = new Report();
         $report->addFileReport($file1);
@@ -322,10 +341,10 @@ final class ConsoleReporterTest extends TestCase
     #[Test]
     public function itSkipsCleanFilesAmongDirtyOnes(): void
     {
-        $cleanFile = new Violations('clean.xml');
+        $cleanFile = new FileReport('clean.xml');
 
-        $dirtyFile = new Violations('dirty.xml');
-        $dirtyFile->addViolation($this->createViolation());
+        $dirtyFile = new FileReport('dirty.xml');
+        $dirtyFile->addFoundViolations([$this->createViolation()]);
 
         $report = new Report();
         $report->addFileReport($cleanFile);
@@ -341,12 +360,9 @@ final class ConsoleReporterTest extends TestCase
     public function itShowsScannedFileCountInOkSummary(): void
     {
         $report = new Report();
-        $report->addFileReport(new Violations('a.xml'));
-        $report->incrementFilesScanned();
-        $report->addFileReport(new Violations('b.xml'));
-        $report->incrementFilesScanned();
-        $report->addFileReport(new Violations('c.xml'));
-        $report->incrementFilesScanned();
+        $report->addFileReport(new FileReport('a.xml'));
+        $report->addFileReport(new FileReport('b.xml'));
+        $report->addFileReport(new FileReport('c.xml'));
 
         $output = $this->reporter->generate($report);
 
@@ -356,13 +372,13 @@ final class ConsoleReporterTest extends TestCase
     #[Test]
     public function itCountsFilesWithViolationsInFoundSummary(): void
     {
-        $file1 = new Violations('a.xml');
-        $file1->addViolation($this->createViolation());
+        $file1 = new FileReport('a.xml');
+        $file1->addFoundViolations([$this->createViolation()]);
 
-        $file2 = new Violations('b.xml');
-        $file2->addViolation($this->createViolation());
+        $file2 = new FileReport('b.xml');
+        $file2->addFoundViolations([$this->createViolation()]);
 
-        $cleanFile = new Violations('c.xml');
+        $cleanFile = new FileReport('c.xml');
 
         $report = new Report();
         $report->addFileReport($file1);
@@ -371,7 +387,7 @@ final class ConsoleReporterTest extends TestCase
 
         $output = $this->reporter->generate($report);
 
-        self::assertStringContainsString('in 3 file(s).', $output);
+        self::assertStringContainsString('in 2 file(s).', $output);
     }
 
     #[Test]
@@ -380,7 +396,7 @@ final class ConsoleReporterTest extends TestCase
         $reporter = new ConsoleReporter(useColors: true);
 
         $report = new Report();
-        $report->incrementFilesScanned();
+        $report->addFileReport(new FileReport('clean.xml'));
 
         $output = $reporter->generate($report);
 
@@ -391,7 +407,7 @@ final class ConsoleReporterTest extends TestCase
     public function itOmitsAnsiCodesWhenColorsDisabled(): void
     {
         $report = new Report();
-        $report->incrementFilesScanned();
+        $report->addFileReport(new FileReport('clean.xml'));
 
         $output = $this->reporter->generate($report);
 
@@ -404,7 +420,7 @@ final class ConsoleReporterTest extends TestCase
         $reporter = new ConsoleReporter();
 
         $report = new Report();
-        $report->incrementFilesScanned();
+        $report->addFileReport(new FileReport('clean.xml'));
 
         $output = $reporter->generate($report);
 
@@ -414,8 +430,8 @@ final class ConsoleReporterTest extends TestCase
     #[Test]
     public function itPadsSeverityToSevenCharacters(): void
     {
-        $fileReport = new Violations('file.xml');
-        $fileReport->addViolation($this->createViolation(severity: Severity::ERROR));
+        $fileReport = new FileReport('file.xml');
+        $fileReport->addFoundViolations([$this->createViolation()]);
 
         $report = new Report();
         $report->addFileReport($fileReport);
@@ -428,13 +444,8 @@ final class ConsoleReporterTest extends TestCase
     #[Test]
     public function itSeparatesFieldsWithPipes(): void
     {
-        $fileReport = new Violations('file.xml');
-        $fileReport->addViolation($this->createViolation(
-            message: 'Test message',
-            line: 1,
-            sniffCode: 'DocbookCS.Test',
-            severity: Severity::ERROR,
-        ));
+        $fileReport = new FileReport('file.xml');
+        $fileReport->addFoundViolations([$this->createViolation(message: 'Test message')]);
 
         $report = new Report();
         $report->addFileReport($fileReport);
@@ -460,7 +471,7 @@ final class ConsoleReporterTest extends TestCase
         $reporter = new ConsoleReporter(useColors: false, showPerformance: true);
 
         $report = new Report();
-        $report->incrementFilesScanned();
+        $report->addFileReport(new FileReport('clean.xml'));
 
         $output = $reporter->generate($report);
 
@@ -473,17 +484,17 @@ final class ConsoleReporterTest extends TestCase
         $reporter = new ConsoleReporter(useColors: false, showPerformance: true);
 
         $report = new Report();
-        $report->incrementFilesScanned();
-
-        $report->setTotalTime(2.0);
-        $report->addSniffTime('SniffA', 1.0);
+        $report->measureWallTime(function () use ($report): void {
+            $fileReport = new FileReport('clean.xml', collectPerformance: true);
+            $fileReport->measureSniffer('SniffA', static fn() => usleep(1_000));
+            $report->addFileReport($fileReport);
+        });
 
         $output = $reporter->generate($report);
 
         self::assertStringContainsString('PERFORMANCE', $output);
-        self::assertStringContainsString('Total runtime: 2.000s', $output);
-        self::assertSame(1, substr_count($output, 'Total runtime: 2.000s'));
-        self::assertStringContainsString('Sniffing:', $output);
+        self::assertSame(1, substr_count($output, 'Total runtime:'));
+        self::assertStringContainsString('Sniffing', $output);
     }
 
     #[Test]
@@ -492,11 +503,13 @@ final class ConsoleReporterTest extends TestCase
         $reporter = new ConsoleReporter(useColors: false, showPerformance: true);
 
         $report = new Report();
-        $report->setTotalTime(3.0);
-
-        $report->addSniffTime('FastSniff', 0.5);
-        $report->addSniffTime('SlowSniff', 2.0);
-        $report->addSniffTime('MediumSniff', 1.0);
+        $report->measureWallTime(function () use ($report): void {
+            $fileReport = new FileReport('file.xml', collectPerformance: true);
+            $fileReport->measureSniffer('FastSniff', static fn() => usleep(1_000));
+            $fileReport->measureSniffer('SlowSniff', static fn() => usleep(30_000));
+            $fileReport->measureSniffer('MediumSniff', static fn() => usleep(10_000));
+            $report->addFileReport($fileReport);
+        });
 
         $output = $reporter->generate($report);
 
@@ -514,13 +527,19 @@ final class ConsoleReporterTest extends TestCase
         $reporter = new ConsoleReporter(useColors: false, showPerformance: true);
 
         $report = new Report();
-        $report->setTotalTime(2.0);
-
-        $report->addSniffTime('SniffA', 1.0); // 50%
+        $report->measureWallTime(function () use ($report): void {
+            $fileReport = new FileReport('file.xml', collectPerformance: true);
+            $fileReport->measureSniffer('SniffA', static fn() => usleep(1_000));
+            $fileReport->measureSniffer('SniffB', static fn() => usleep(1_000));
+            $report->addFileReport($fileReport);
+        });
 
         $output = $reporter->generate($report);
 
-        self::assertStringContainsString('1.000s ( 50.0%)', $output);
+        self::assertMatchesRegularExpression(
+            '/^ SniffA +\d+\.\d{3}s \( *\d+\.\d%\) *$/m',
+            $output,
+        );
     }
 
     #[Test]
@@ -529,16 +548,21 @@ final class ConsoleReporterTest extends TestCase
         $reporter = new ConsoleReporter(useColors: false, showPerformance: true);
 
         $report = new Report();
-        $report->setTotalTime(2.0);
-        $report->addSniffTime('SniffA', 1.0);
-        $report->addFixTime(0.5);
+        $report->measureWallTime(function () use ($report): void {
+            $fileReport = new FileReport('file.xml', collectPerformance: true);
+            $fileReport->measureSniffer('SniffA', static fn() => usleep(1_000));
+            $fileReport->measureFixing(
+                fn() => $fileReport->measureFixer('SniffA', static fn() => usleep(1_000))
+            );
+            $report->addFileReport($fileReport);
+        });
 
         $output = $reporter->generate($report);
 
-        self::assertStringContainsString('Sniffing:', $output);
-        self::assertStringContainsString('Fixing:', $output);
-        self::assertStringContainsString('0.500s ( 25.0%)', $output);
-        self::assertTrue(strpos($output, 'Sniffing:') < strpos($output, 'Fixing:'));
+        self::assertMatchesRegularExpression(
+            '/^ SniffA +\d+\.\d{3}s \( *\d+\.\d%\) +\d+\.\d{3}s \( *\d+\.\d%\) *$/m',
+            $output,
+        );
     }
 
     #[Test]
@@ -547,8 +571,11 @@ final class ConsoleReporterTest extends TestCase
         $reporter = new ConsoleReporter(useColors: false, showPerformance: false);
 
         $report = new Report();
-        $report->setTotalTime(2.0);
-        $report->addSniffTime('SniffA', 1.0);
+
+        $fileReport = new FileReport('file.xml');
+        $fileReport->measureSniffer('SniffA', static fn() => null);
+
+        $report->addFileReport($fileReport);
 
         $output = $reporter->generate($report);
 
