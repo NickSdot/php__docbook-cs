@@ -7,7 +7,7 @@ namespace DocbookCS\Runner;
 final readonly class EntityPreprocessor
 {
     private const array PREDEFINED = ['amp', 'lt', 'gt', 'quot', 'apos'];
-    private const string ENTITY_PATTERN = '&([a-zA-Z_][\w.\-]*);';
+    private const string EXPANSION_PATTERN = '/<!--.*?-->|<!\[CDATA\[.*?]]>|<\?.*?\?>|&([a-zA-Z_][\w.-]*);/s';
     private const string XML_DECLARATION_PATTERN = '/<\?xml[^?]*\?>/i';
 
     /**
@@ -40,7 +40,7 @@ final readonly class EntityPreprocessor
             $changed = false;
 
             $content = preg_replace_callback(
-                '/<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<\?[\s\S]*?\?>|' . self::ENTITY_PATTERN . '/',
+                self::EXPANSION_PATTERN,
                 function (array $matches) use (&$changed, $markXmlExpansions): string {
                     // Entity-like text inside comments is literal.
                     if (str_starts_with($matches[0], '<!--')) {
