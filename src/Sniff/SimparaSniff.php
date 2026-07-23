@@ -10,7 +10,7 @@ use DocbookCS\Source\File;
 final class SimparaSniff extends AbstractSniff implements Fixable
 {
     private const string ELEMENT_NAME = 'para';
-    private const string MESSAGE = '<para> contains only inline content and should be <simpara>.';
+    private const string REPORTING_MESSAGE = '<para> contains only inline content and should be <simpara>.';
     private const string PARA_TAG_PATTERN = '/<\/?para\b[^>]*>/';
 
     private const array SIMPARA_ALLOWED = [
@@ -174,7 +174,7 @@ final class SimparaSniff extends AbstractSniff implements Fixable
 
             $violations[] = $this->createViolation(
                 $file->path,
-                self::MESSAGE,
+                self::REPORTING_MESSAGE,
                 $affectedRanges,
             );
         }

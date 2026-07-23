@@ -16,6 +16,10 @@ final class WhitespaceSniff extends AbstractSniff implements Fixable
 {
     private const string LINE_ENDING_PATTERN = '/(\r\n|\n|\r)/';
     private const string WHITESPACE_PATTERN = '/([ \t]+$)|^(\t* +\t+|\t+ +\t*)|^( +)\t/';
+    private const string TRAILING_WHITESPACE_MESSAGE = 'Trailing whitespace detected.';
+    private const string MIXED_INDENTATION_MESSAGE = 'Mixed tabs and spaces in indentation.';
+    private const string INCONSISTENT_INDENTATION_MESSAGE = 'Inconsistent indentation.';
+
     public static function getCode(): string
     {
         return 'DocbookCS.Whitespace';
@@ -48,9 +52,9 @@ final class WhitespaceSniff extends AbstractSniff implements Fixable
 
             if (preg_match(self::WHITESPACE_PATTERN, $lineContent, $matches)) {
                 $message = match (true) {
-                    !empty($matches[1]) => 'Trailing whitespace detected.',
-                    !empty($matches[2]) || !empty($matches[3]) => 'Mixed tabs and spaces in indentation.',
-                    default => 'Inconsistent indentation.', // @codeCoverageIgnore
+                    !empty($matches[1]) => self::TRAILING_WHITESPACE_MESSAGE,
+                    !empty($matches[2]) || !empty($matches[3]) => self::MIXED_INDENTATION_MESSAGE,
+                    default => self::INCONSISTENT_INDENTATION_MESSAGE, // @codeCoverageIgnore
                 };
 
                 $violations[] = $this->createViolation(

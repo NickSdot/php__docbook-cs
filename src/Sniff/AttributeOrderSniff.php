@@ -19,6 +19,8 @@ final class AttributeOrderSniff extends AbstractSniff implements Fixable
 {
     private const string OPENING_TAG_PATTERN = '/<([a-zA-Z0-9:_-]+)\b([^<>]*?)>/';
     private const string ATTRIBUTE_NAME_PATTERN = '/([a-zA-Z0-9:_-]+)\s*=/';
+    private const string REPORTING_MESSAGE = 'Element <%s>: xml:id should appear before xmlns attributes.';
+
     public static function getCode(): string
     {
         return 'DocbookCS.AttributeOrder';
@@ -112,7 +114,7 @@ final class AttributeOrderSniff extends AbstractSniff implements Fixable
 
         $violations[] = $this->createViolation(
             $filePath,
-            sprintf('Element <%s>: xml:id should appear before xmlns attributes.', $tagName),
+            sprintf(self::REPORTING_MESSAGE, $tagName),
             [$affectedRange],
         );
     }

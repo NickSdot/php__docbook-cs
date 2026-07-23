@@ -18,6 +18,8 @@ use DocbookCS\Source\File;
 final class ExceptionNameSniff extends AbstractSniff implements Fixable
 {
     private const string ELEMENT_NAME = 'classname';
+    private const string REPORTING_MESSAGE = '"%s" is wrapped in <classname> but should use <exceptionname>.';
+
     /**
      * Default suffixes that indicate the class is an exception or error.
      * @var list<string>
@@ -92,7 +94,7 @@ final class ExceptionNameSniff extends AbstractSniff implements Fixable
 
             $violations[] = $this->createViolation(
                 $file->path,
-                sprintf('"%s" is wrapped in <classname> but should use <exceptionname>.', $text),
+                sprintf(self::REPORTING_MESSAGE, $text),
                 $affectedRanges,
             );
         }
