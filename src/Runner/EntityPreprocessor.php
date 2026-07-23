@@ -14,7 +14,7 @@ final class EntityPreprocessor
      * @param array<string, string> $entities
      */
     public function __construct(
-        private array $entities,
+        private array $entities = [],
     ) {
     }
 
