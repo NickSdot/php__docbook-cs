@@ -79,9 +79,7 @@ final class EntityResolver
      */
     private function getEntityFiles(string $path): array
     {
-        // Explicitly configured files are loaded regardless of extension;
-        // the extension filter only applies when scanning directories.
-        if (is_file($path)) {
+        if (is_file($path) && $this->isEntityFile($path)) {
             return [$path];
         }
 
