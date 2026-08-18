@@ -191,9 +191,17 @@ final class EntityResolverTest extends TestCase
     }
 
     #[Test]
-    public function itLoadsExplicitlyConfiguredFilesRegardlessOfExtension(): void
+    public function itIgnoresExplicitlyConfiguredFilesWithUnsupportedExtension(): void
     {
         $resolver = new EntityResolver([], [$this->fixtureRoot . '/not_an_entity.xml']);
+
+        self::assertSame([], $resolver->resolve());
+    }
+
+    #[Test]
+    public function itLoadsExplicitlyConfiguredFilesWhenExtensionIsConfigured(): void
+    {
+        $resolver = new EntityResolver([], [$this->fixtureRoot . '/not_an_entity.xml'], ['xml']);
 
         self::assertSame(['ignored' => 'should-not-be-parsed'], $resolver->resolve());
     }
