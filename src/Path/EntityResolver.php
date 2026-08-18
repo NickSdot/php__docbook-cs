@@ -6,7 +6,8 @@ namespace DocbookCS\Path;
 
 final class EntityResolver
 {
-    private string $extension;
+    /** @var list<string> */
+    private array $extensions;
 
     /** @var array<string, string>|null */
     private ?array $resolvedEntities = null;
@@ -17,13 +18,16 @@ final class EntityResolver
     /**
      * @param array<string, string> $projectRoots
      * @param list<string> $entityPaths
+     * @param list<string> $extensions
      */
     public function __construct(
         private readonly array $projectRoots,
         private readonly array $entityPaths,
-        string $extension = 'ent'
+        array $extensions = ['ent', 'dtd']
     ) {
-        $this->extension = ltrim($extension, '.');
+        $this->extensions = array_values(
+            array_map(static fn (string $extension): string => ltrim($extension, '.'), $extensions)
+        );
     }
 
     /**
@@ -75,7 +79,9 @@ final class EntityResolver
      */
     private function getEntityFiles(string $path): array
     {
-        if (is_file($path) && $this->isEntityFile($path)) {
+        // Explicitly configured files are loaded regardless of extension;
+        // the extension filter only applies when scanning directories.
+        if (is_file($path)) {
             return [$path];
         }
 
@@ -88,7 +94,13 @@ final class EntityResolver
 
     private function isEntityFile(string $path): bool
     {
-        return str_ends_with($path, '.' . $this->extension);
+        foreach ($this->extensions as $extension) {
+            if (str_ends_with($path, '.' . $extension)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

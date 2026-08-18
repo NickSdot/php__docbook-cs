@@ -191,20 +191,20 @@ final class EntityResolverTest extends TestCase
     }
 
     #[Test]
-    public function itIgnoresFilesWithWrongExtension(): void
+    public function itLoadsExplicitlyConfiguredFilesRegardlessOfExtension(): void
     {
         $resolver = new EntityResolver([], [$this->fixtureRoot . '/not_an_entity.xml']);
 
-        self::assertSame([], $resolver->resolve());
+        self::assertSame(['ignored' => 'should-not-be-parsed'], $resolver->resolve());
     }
 
     #[Test]
-    public function itSupportsCustomExtension(): void
+    public function itSupportsCustomExtensions(): void
     {
         $resolver = new EntityResolver(
             [],
             [$this->fixtureRoot . '/custom/custom.dtd'],
-            'dtd'
+            ['dtd']
         );
 
         $entities = $resolver->resolve();
@@ -213,17 +213,28 @@ final class EntityResolverTest extends TestCase
     }
 
     #[Test]
-    public function itStripsLeadingDotFromExtension(): void
+    public function itFindsDtdFilesInDirectoriesByDefault(): void
+    {
+        $resolver = new EntityResolver([], [$this->fixtureRoot . '/custom']);
+
+        $entities = $resolver->resolve();
+
+        self::assertSame('custom-value', $entities['custom_ent']);
+    }
+
+    #[Test]
+    public function itStripsLeadingDotFromExtensions(): void
     {
         $resolver = new EntityResolver(
             [],
-            [$this->fixtureRoot . '/global.ent'],
-            '.ent'
+            [$this->fixtureRoot],
+            ['.ent']
         );
 
         $entities = $resolver->resolve();
 
         self::assertSame('Acme Widget', $entities['product']);
+        self::assertArrayNotHasKey('ignored', $entities);
     }
 
     #[Test]
