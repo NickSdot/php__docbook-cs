@@ -53,7 +53,7 @@ final readonly class Violation
             filePath: $filePath,
             message: 'Could not read file.',
             affectedRanges: [
-                new SourceRange(0, 0, 0)
+                new SourceRange(0, 0, 0),
             ],
             severity: Severity::ERROR,
         );
